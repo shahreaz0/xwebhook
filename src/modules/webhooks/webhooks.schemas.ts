@@ -1,13 +1,9 @@
 import { z } from "zod";
 
-export const WebhookEventEnum = z.enum(["employee.created", "employee.deleted"]);
-
-export type WebhookEvent = z.infer<typeof WebhookEventEnum>;
-
 export const WebhookSchema = z.object({
   id: z.cuid2(),
   orgId: z.cuid2(),
-  event: WebhookEventEnum,
+  event: z.string(),
   url: z.url(),
   token: z.string(),
 
@@ -21,3 +17,5 @@ export const WebhookCreateSchema = WebhookSchema.omit({
   updatedAt: true,
   orgId: true,
 });
+
+export const WebhooksUpdateSchema = WebhookCreateSchema.partial();

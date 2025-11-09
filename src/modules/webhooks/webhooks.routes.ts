@@ -1,88 +1,205 @@
-import { Elysia, status } from "elysia";
-import { prisma } from "../../../prisma";
-import { WebhookCreateSchema, WebhookSchema } from "./webhooks.schemas";
-import { z } from "zod";
+import { idParamsSchema, notFoundSchema } from "@/lib/schema-contants";
+import { createRoute, z } from "@hono/zod-openapi";
+import { createErrorSchema } from "stoker/openapi/schemas";
+import {
+  WebhookCreateSchema,
+  WebhookSchema,
+  WebhooksUpdateSchema,
+} from "./webhooks.schemas";
 
-export const webhooks = new Elysia({ tags: ["Webhooks"] });
+const tags = ["Webhooks"];
 
-webhooks
-  .get(
-    "/webhooks",
-    async (ctx) => {
-      const webhooks = await prisma.webhook.findMany({
-        where: {
-          orgId: (ctx.store as any).orgId,
+export const list = createRoute({
+  tags,
+  method: "get",
+  path: "/webhooks",
+  summary: "Get webhook list",
+  description: "Get all the webhooks of a user",
+
+  responses: {
+    200: {
+      description: "successful operation",
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.boolean().openapi({ example: true }),
+            data: z.array(WebhookSchema),
+          }),
         },
-      });
-
-      const parsedWebhook = z.array(WebhookSchema).parse(webhooks);
-
-      return {
-        status: "success",
-        data: parsedWebhook,
-      };
-    },
-    {
-      response: {
-        200: z.object({
-          status: z.string(),
-          data: z.array(WebhookSchema),
-        }),
       },
-    }
-  )
-  .post(
-    "/webhooks",
-    async (ctx) => {
-      const createdWebhook = await prisma.webhook.create({
-        data: {
-          ...ctx.body,
-          orgId: (ctx.store as any).orgId,
-        },
-      });
-
-      ctx.set.status = 201;
-
-      return { message: "Webhooks registered", data: createdWebhook };
     },
-    {
-      body: WebhookCreateSchema,
-      response: {
-        201: z.object({ message: z.string(), data: WebhookSchema }),
+  },
+});
+
+export const create = createRoute({
+  tags,
+  method: "post",
+  path: "/webhooks",
+  summary: "Create webhook",
+  description: "You can create webhook for a user",
+  request: {
+    body: {
+      description: "The webhook to create",
+      content: {
+        "application/json": {
+          schema: WebhookCreateSchema,
+        },
       },
-    }
-  )
-  .delete(
-    "/webhooks/:id",
-    async (ctx) => {
-      const existedWebhook = await prisma.webhook.findUnique({
-        where: {
-          orgId: (ctx.store as any).orgId,
-          id: ctx.params.id,
-        },
-      });
-
-      if (!existedWebhook) {
-        return status(404, {
-          message: "Webhook not found with the given ID",
-          status: "Not found",
-        });
-      }
-
-      const deletedWebhook = await prisma.webhook.delete({
-        where: {
-          orgId: (ctx.store as any).orgId,
-          id: ctx.params.id,
-        },
-      });
-
-      return { message: "Webhooks deleted", data: WebhookSchema.parse(deletedWebhook) };
     },
-    {
-      params: z.object({ id: z.cuid2() }),
-      response: {
-        200: z.object({ message: z.string(), data: WebhookSchema }),
-        404: z.object({ status: z.string(), message: z.string() }),
+  },
+  responses: {
+    201: {
+      description: "successful operation",
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.boolean(),
+            data: WebhookSchema,
+          }),
+        },
       },
-    }
-  );
+    },
+    422: {
+      description: "invalid body",
+      content: {
+        "application/json": {
+          schema: createErrorSchema(WebhookCreateSchema),
+        },
+      },
+    },
+  },
+});
+
+export const getOne = createRoute({
+  tags,
+  method: "get",
+  path: "/webhooks/{id}",
+  summary: "Get a webhook",
+  description: "Get webhook details",
+  request: {
+    params: idParamsSchema,
+  },
+  responses: {
+    200: {
+      description: "successful operation",
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.boolean().openapi({ example: true }),
+            data: WebhookSchema,
+          }),
+        },
+      },
+    },
+    422: {
+      description: "invalid path params",
+      content: {
+        "application/json": {
+          schema: createErrorSchema(idParamsSchema),
+        },
+      },
+    },
+    404: {
+      description: "not found",
+      content: {
+        "application/json": {
+          schema: notFoundSchema,
+        },
+      },
+    },
+  },
+});
+
+export const patch = createRoute({
+  tags,
+  method: "patch",
+  path: "/webhooks/{id}",
+  summary: "Update a webhook",
+  description: "Update a webhook",
+  request: {
+    params: idParamsSchema,
+    body: {
+      description: "body",
+      content: {
+        "application/json": {
+          schema: WebhooksUpdateSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "successful operation",
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.boolean().openapi({ example: true }),
+            data: WebhookSchema,
+          }),
+        },
+      },
+    },
+    422: {
+      description: "invalid body",
+      content: {
+        "application/json": {
+          schema: z.union([
+            createErrorSchema(WebhooksUpdateSchema),
+            createErrorSchema(idParamsSchema),
+          ]),
+        },
+      },
+    },
+    404: {
+      description: "not found",
+      content: {
+        "application/json": {
+          schema: notFoundSchema,
+        },
+      },
+    },
+  },
+});
+
+export const remove = createRoute({
+  tags,
+  method: "delete",
+  path: "/webhooks/{id}",
+  summary: "Delete a webhook",
+  description: "Delete a webhook of a user",
+  request: {
+    params: idParamsSchema,
+  },
+  responses: {
+    200: {
+      description: "successful",
+      content: {
+        "application/json": {
+          schema: z.object({ success: z.boolean(), data: z.object({ id: z.string() }) }),
+        },
+      },
+    },
+    422: {
+      description: "invalid path params",
+      content: {
+        "application/json": {
+          schema: createErrorSchema(idParamsSchema),
+        },
+      },
+    },
+    404: {
+      description: "not found",
+      content: {
+        "application/json": {
+          schema: notFoundSchema,
+        },
+      },
+    },
+  },
+});
+
+export type ListRoute = typeof list;
+export type CreateRoute = typeof create;
+export type GetOneRoute = typeof getOne;
+export type PatchRoute = typeof patch;
+export type RemoveRoute = typeof remove;

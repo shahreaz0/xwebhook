@@ -1,9 +1,8 @@
 import { XiorResponse } from "xior";
 import { prisma } from "../../../prisma";
 import { http } from "../../lib/xior";
-import { WebhookEvent } from "./webhooks.schemas";
 
-export async function callWebhooks(event: WebhookEvent, orgId: string, payload: any) {
+export async function callWebhooks(event: string, orgId: string, payload: any) {
   const webhooks = await prisma.webhook.findMany({
     where: {
       orgId: orgId,

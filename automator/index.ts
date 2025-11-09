@@ -1,54 +1,32 @@
-import { Elysia } from "elysia";
-import { openapi } from "@elysiajs/openapi";
-import { z } from "zod";
+import { Hono } from "hono";
 
-const app = new Elysia();
+const app = new Hono();
 
-app.use(
-  openapi({
-    mapJsonSchema: {
-      zod: z.toJSONSchema,
-    },
-  })
-);
-
-app.get(
-  "/",
-  () => ({
+app.get("/", (c) => {
+  return c.json({
     status: "OK",
     service: "automator service",
     timestamp: Date.now(),
-  }),
-  {
-    detail: {
-      summary: "health",
-    },
+  });
+});
+
+app.post("/webhook", async (c) => {
+  const secret = c.req.header("x-webhook-secret");
+
+  if (secret !== "aabb") {
+    return c.json("Unauthorized", 401);
   }
-);
 
-app.post(
-  "/webhook",
-  (ctx) => {
-    const secret = ctx.headers["x-webhook-secret"];
+  const body = await c.req.json();
 
-    if (secret !== "aabb") {
-      return ctx.status(401, "Unauthorized");
-    }
-
-    const body = ctx.body;
-
-    if (body.event === "employee.created") {
-      console.log({ message: "email sent to " + body.data.name });
-    }
-  },
-  {
-    body: z.object({
-      event: z.string(),
-      data: z.any(),
-    }),
+  if (body.event === "employee.created") {
+    console.log({ message: "email sent to " + body.data.name });
   }
-);
+});
 
-app.listen(8099);
+export default {
+  port: 8099,
+  fetch: app.fetch,
+};
 
-console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
+console.log(`Server is running at 8099`);
