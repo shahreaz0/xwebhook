@@ -1,5 +1,6 @@
+import { prisma } from "prisma";
 import { XiorResponse } from "xior";
-import { prisma } from "../../../prisma";
+// import { prisma } from "../../../prisma";
 import { http } from "../../lib/xior";
 
 export async function callWebhooks(event: string, orgId: string, payload: any) {
