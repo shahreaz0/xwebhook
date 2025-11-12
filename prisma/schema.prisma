@@ -10,34 +10,39 @@ datasource db {
 }
 
 model User {
-  id       String  @id @default(cuid())
+  id       String  @id @default(cuid(2))
   email    String  @unique
   password String
   name     String?
 
-  apps Application[]
+  apps     Application[]
+  sessions Session[]
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  sessions  Session[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
 }
 
 model Session {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid(2))
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   expiresAt DateTime
-  token     String
+  token     String   @unique
 
   ipAddress String?
   userAgent String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId, expiresAt])
+  @@index([userId])
 }
 
 model Application {
-  id          String  @id @default(cuid())
+  id          String  @id @default(cuid(2))
   name        String
   description String?
   userId      String
@@ -46,28 +51,30 @@ model Application {
   appUsers   AppUser[]
   eventTypes EventType[]
 
-  // apiKeys         ApiKey[]
-  // webhookSecrets  WebhookSecret[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  eventTypeId String
+  @@index([userId])
+  @@index([name])
 }
 
 model AppUser {
-  id            String      @id @default(cuid())
+  id            String      @id @default(cuid(2))
   applicationId String
   application   Application @relation(fields: [applicationId], references: [id])
-
-  userId   String
-  email    String
-  metadata Json?
+  userId        String
+  email         String
+  metadata      Json?
 
   webhooks Webhook[]
   messages Message[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([applicationId, userId]) // Prevent duplicates
+  @@index([applicationId])
+  @@index([email])
 }
 
 model Webhook {
@@ -80,37 +87,54 @@ model Webhook {
   disabled    Boolean     @default(false)
   metadata    Json?
   rateLimit   Int?
+  eventId     String
+  appUser     AppUser?    @relation(fields: [appUserId], references: [id])
+  appUserId   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  eventId   String
-  appUser   AppUser? @relation(fields: [appUserId], references: [id])
-  appUserId String?
+
+  @@unique([appUserId, url]) // Prevent duplicate webhook per app user
+  @@index([appUserId])
+  @@index([orgId])
+  @@index([url])
+  @@index([disabled])
 }
 
 model EventType {
-  id          String @id @default(cuid(2))
-  orgId       String
-  name        String
-  description String
+  id            String      @id @default(cuid(2))
+  orgId         String
+  name          String
+  description   String
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  applications Application[]
-  webhook      Webhook?      @relation(fields: [webhookId], references: [id])
-  webhookId    String?
-  messages     Message[]
+  webhook   Webhook?  @relation(fields: [webhookId], references: [id])
+  webhookId String?
+  messages  Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([applicationId, name])
+  @@index([webhookId])
+  @@index([orgId])
+  @@index([applicationId])
 }
 
 model Message {
-  id String @id @default(cuid(2))
-
+  id          String    @id @default(cuid(2))
   appUser     AppUser?  @relation(fields: [appUserId], references: [id])
   appUserId   String?
   eventType   EventType @relation(fields: [eventTypeId], references: [id])
   eventTypeId String
   payload     Json
+  status      String    @default("pending") // pending | delivered | failed
+  deliverAt   DateTime?
+  createdAt   DateTime  @default(now())
 
-  createdAt DateTime  @default(now())
-  deliverAt DateTime?
+  @@index([eventTypeId])
+  @@index([appUserId])
+  @@index([deliverAt])
+  @@index([status, deliverAt]) // Optimized for dispatch queue
 }
