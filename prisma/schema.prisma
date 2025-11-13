@@ -122,19 +122,29 @@ model EventType {
   @@index([applicationId])
 }
 
+enum MessageStatus {
+  PENDING // waiting to be sent
+  PROCESSING // currently sending
+  DELIVERED // successfully sent
+  FAILED // failed
+  RETRYING // failed before but retrying
+  SKIPPED // intentionally not sent
+  EXPIRED // delivery expired
+}
+
 model Message {
-  id          String    @id @default(cuid(2))
-  appUser     AppUser?  @relation(fields: [appUserId], references: [id])
+  id          String        @id @default(cuid(2))
+  appUser     AppUser?      @relation(fields: [appUserId], references: [id])
   appUserId   String?
-  eventType   EventType @relation(fields: [eventTypeId], references: [id])
+  eventType   EventType     @relation(fields: [eventTypeId], references: [id])
   eventTypeId String
   payload     Json
-  status      String    @default("pending") // pending | delivered | failed
+  status      MessageStatus @default(PENDING)
   deliverAt   DateTime?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime      @default(now())
 
   @@index([eventTypeId])
   @@index([appUserId])
   @@index([deliverAt])
-  @@index([status, deliverAt]) // Optimized for dispatch queue
+  @@index([status, deliverAt])
 }
