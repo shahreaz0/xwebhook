@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -8,26 +5,146 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model Webhook {
-  id    String @id @default(cuid(2))
-  orgId String
-  event String
-  url   String
-  token String
+model User {
+  id       String  @id @default(cuid(2))
+  email    String  @unique
+  password String
+  name     String?
+
+  apps     Application[]
+  sessions Session[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([email])
 }
 
-model Employee {
-  id    String @id @default(cuid(2))
-  orgId String
-  name  String
+model Session {
+  id        String   @id @default(cuid(2))
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  expiresAt DateTime
+  token     String   @unique
+
+  ipAddress String?
+  userAgent String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId, expiresAt])
+  @@index([userId])
+}
+
+model Application {
+  id          String  @id @default(cuid(2))
+  name        String
+  description String?
+  userId      String
+  user        User    @relation(fields: [userId], references: [id])
+
+  appUsers   AppUser[]
+  eventTypes EventType[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([name])
+}
+
+model AppUser {
+  id            String      @id @default(cuid(2))
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+  userId        String
+  email         String
+  metadata      Json?
+
+  webhooks Webhook[]
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([applicationId, userId]) // Prevent duplicates
+  @@index([applicationId])
+  @@index([email])
+}
+
+model Webhook {
+  id          String      @id @default(cuid(2))
+  orgId       String
+  eventTypes  EventType[]
+  url         String
+  secrets     String
+  description String?
+  disabled    Boolean     @default(false)
+  metadata    Json?
+  rateLimit   Int?
+  eventId     String
+  appUser     AppUser?    @relation(fields: [appUserId], references: [id])
+  appUserId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([appUserId, url]) // Prevent duplicate webhook per app user
+  @@index([appUserId])
+  @@index([orgId])
+  @@index([url])
+  @@index([disabled])
+}
+
+model EventType {
+  id            String      @id @default(cuid(2))
+  orgId         String
+  name          String
+  description   String
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+
+  webhook   Webhook?  @relation(fields: [webhookId], references: [id])
+  webhookId String?
+  messages  Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([applicationId, name])
+  @@index([webhookId])
+  @@index([orgId])
+  @@index([applicationId])
+}
+
+enum MessageStatus {
+  PENDING // waiting to be sent
+  PROCESSING // currently sending
+  DELIVERED // successfully sent
+  FAILED // failed
+  RETRYING // failed before but retrying
+  SKIPPED // intentionally not sent
+  EXPIRED // delivery expired
+}
+
+model Message {
+  id          String        @id @default(cuid(2))
+  appUser     AppUser?      @relation(fields: [appUserId], references: [id])
+  appUserId   String?
+  eventType   EventType     @relation(fields: [eventTypeId], references: [id])
+  eventTypeId String
+  payload     Json
+  status      MessageStatus @default(PENDING)
+  deliverAt   DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@index([eventTypeId])
+  @@index([appUserId])
+  @@index([deliverAt])
+  @@index([status, deliverAt])
 }
