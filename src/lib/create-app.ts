@@ -7,6 +7,7 @@ import type { AppBindings, AppOpenAPI } from "@/lib/types";
 import { defaultHook } from "stoker/openapi";
 
 import { cors } from "hono/cors";
+import { auth } from "@/middlewares/auth";
 
 export function createRouter() {
   return new OpenAPIHono<AppBindings>({ strict: false, defaultHook });
@@ -25,6 +26,8 @@ export function createApp() {
   app.use(serveEmojiFavicon("🔥"));
   app.use(requestId());
   // app.use(logger())
+
+  app.use("/applications/*", auth());
 
   app.notFound(notFound);
   app.onError(onError);
