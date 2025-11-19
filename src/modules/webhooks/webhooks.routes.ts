@@ -1,26 +1,29 @@
-import { idParamsSchema, notFoundSchema } from "@/lib/schema-contants";
 import { createRoute, z } from "@hono/zod-openapi";
+import { idParamsSchema, notFoundSchema } from "@/lib/schema-contants";
 import { createErrorSchema } from "stoker/openapi/schemas";
 import {
-  WebhookCreateSchema,
   WebhookSchema,
-  WebhooksUpdateSchema,
+  WebhookCreateSchema,
+  WebhookUpdateSchema,
 } from "./webhooks.schemas";
 
 const tags = ["Webhooks"];
 
+// Params for /app-users/:id/webhooks/:webhookId
+const webhookParamsSchema = idParamsSchema.extend({
+  webhookId: z.cuid2(),
+});
+
 export const list = createRoute({
   tags,
   method: "get",
-  path: "/webhooks",
-  summary: "List webhooks",
-  description:
-    "Retrieve a list of webhooks belonging to the authenticated user. Returns webhook metadata and delivery settings. Supports paging and filtering (if provided by query parameters).",
-
+  path: "/app-users/{id}/webhooks",
+  summary: "List webhooks for an app user",
+  description: "Retrieve a list of webhooks for the specified app user.",
+  request: { params: idParamsSchema },
   responses: {
     200: {
-      description:
-        "OK — the request succeeded and the response contains the requested data.",
+      description: "OK — list returned successfully.",
       content: {
         "application/json": {
           schema: z.object({
@@ -36,11 +39,11 @@ export const list = createRoute({
 export const create = createRoute({
   tags,
   method: "post",
-  path: "/webhooks",
-  summary: "Create a new webhook",
-  description:
-    "Create a new webhook for the authenticated user. Provide the delivery URL, subscribed events, and optional secret. Returns the created webhook record.",
+  path: "/app-users/{id}/webhooks",
+  summary: "Create a new webhook for an app user",
+  description: "Create a new webhook for the specified app user.",
   request: {
+    params: idParamsSchema,
     body: {
       description: "The webhook to create",
       content: {
@@ -52,19 +55,15 @@ export const create = createRoute({
   },
   responses: {
     201: {
-      description: "Created — webhook successfully created and returned in the response.",
+      description: "Created — webhook created successfully.",
       content: {
         "application/json": {
-          schema: z.object({
-            success: z.boolean(),
-            data: WebhookSchema,
-          }),
+          schema: z.object({ success: z.boolean(), data: WebhookSchema }),
         },
       },
     },
     422: {
-      description:
-        "Unprocessable Entity — request body validation failed; see `errors` for details.",
+      description: "Unprocessable Entity — request body validation failed.",
       content: {
         "application/json": {
           schema: createErrorSchema(WebhookCreateSchema),
@@ -77,16 +76,14 @@ export const create = createRoute({
 export const getOne = createRoute({
   tags,
   method: "get",
-  path: "/webhooks/{id}",
-  summary: "Retrieve a webhook by ID",
+  path: "/app-users/{id}/webhooks/{webhookId}",
+  summary: "Retrieve a webhook by ID for an app user",
   description:
-    "Retrieve the details of a single webhook identified by {id}. The returned object includes configuration, subscribed events, delivery status and metadata.",
-  request: {
-    params: idParamsSchema,
-  },
+    "Retrieve the details of a single webhook identified by webhookId for the specified app user.",
+  request: { params: webhookParamsSchema },
   responses: {
     200: {
-      description: "OK — webhook details returned successfully.",
+      description: "OK — webhook returned successfully.",
       content: {
         "application/json": {
           schema: z.object({
@@ -97,22 +94,12 @@ export const getOne = createRoute({
       },
     },
     422: {
-      description:
-        "Unprocessable Entity — path parameter validation failed (invalid id).",
-      content: {
-        "application/json": {
-          schema: createErrorSchema(idParamsSchema),
-        },
-      },
+      description: "Unprocessable Entity — invalid path parameter (webhookId).",
+      content: { "application/json": { schema: createErrorSchema(webhookParamsSchema) } },
     },
     404: {
-      description:
-        "Not Found — no webhook exists with the provided id for the authenticated user.",
-      content: {
-        "application/json": {
-          schema: notFoundSchema,
-        },
-      },
+      description: "Not Found — no webhook exists with the provided webhookId.",
+      content: { "application/json": { schema: notFoundSchema } },
     },
   },
 });
@@ -120,25 +107,20 @@ export const getOne = createRoute({
 export const patch = createRoute({
   tags,
   method: "patch",
-  path: "/webhooks/{id}",
-  summary: "Update webhook",
+  path: "/app-users/{id}/webhooks/{webhookId}",
+  summary: "Update a webhook for an app user",
   description:
-    "Partially update an existing webhook identified by {id}. Only provided fields will be changed (for example: URL, events, enabled). Returns the updated webhook.",
+    "Partially update an existing webhook identified by webhookId for the specified app user.",
   request: {
-    params: idParamsSchema,
+    params: webhookParamsSchema,
     body: {
-      description:
-        "Partial webhook fields to update (only provided fields will be applied).",
-      content: {
-        "application/json": {
-          schema: WebhooksUpdateSchema,
-        },
-      },
+      description: "Partial fields to update",
+      content: { "application/json": { schema: WebhookUpdateSchema } },
     },
   },
   responses: {
     200: {
-      description: "OK — webhook updated successfully and returned in the response.",
+      description: "OK — webhook updated successfully.",
       content: {
         "application/json": {
           schema: z.object({
@@ -149,23 +131,19 @@ export const patch = createRoute({
       },
     },
     422: {
-      description: "Unprocessable Entity — validation error for body or path parameters.",
+      description: "Unprocessable Entity — validation error.",
       content: {
         "application/json": {
           schema: z.union([
-            createErrorSchema(WebhooksUpdateSchema),
-            createErrorSchema(idParamsSchema),
+            createErrorSchema(WebhookUpdateSchema),
+            createErrorSchema(webhookParamsSchema),
           ]),
         },
       },
     },
     404: {
-      description: "Not Found — no webhook exists with the provided id to update.",
-      content: {
-        "application/json": {
-          schema: notFoundSchema,
-        },
-      },
+      description: "Not Found — no webhook exists with the provided webhookId to update.",
+      content: { "application/json": { schema: notFoundSchema } },
     },
   },
 });
@@ -173,17 +151,13 @@ export const patch = createRoute({
 export const remove = createRoute({
   tags,
   method: "delete",
-  path: "/webhooks/{id}",
-  summary: "Delete webhook",
-  description:
-    "Delete the webhook identified by {id} for the authenticated user. This operation permanently removes the webhook and its configuration.",
-  request: {
-    params: idParamsSchema,
-  },
+  path: "/app-users/{id}/webhooks/{webhookId}",
+  summary: "Delete a webhook for an app user",
+  description: "Delete the webhook identified by webhookId for the specified app user.",
+  request: { params: webhookParamsSchema },
   responses: {
     200: {
-      description:
-        "OK — webhook deleted successfully. Response includes the id of the removed webhook.",
+      description: "OK — webhook deleted successfully.",
       content: {
         "application/json": {
           schema: z.object({ success: z.boolean(), data: z.object({ id: z.string() }) }),
@@ -191,20 +165,12 @@ export const remove = createRoute({
       },
     },
     422: {
-      description: "Unprocessable Entity — invalid path parameters (invalid id).",
-      content: {
-        "application/json": {
-          schema: createErrorSchema(idParamsSchema),
-        },
-      },
+      description: "Unprocessable Entity — invalid path parameters (webhookId).",
+      content: { "application/json": { schema: createErrorSchema(webhookParamsSchema) } },
     },
     404: {
-      description: "Not Found — no webhook exists with the provided id to delete.",
-      content: {
-        "application/json": {
-          schema: notFoundSchema,
-        },
-      },
+      description: "Not Found — no webhook exists with the provided webhookId to delete.",
+      content: { "application/json": { schema: notFoundSchema } },
     },
   },
 });

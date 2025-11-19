@@ -10,92 +10,193 @@ import type {
 import { prisma } from "prisma";
 import { WebhookSchema } from "./webhooks.schemas";
 import { z } from "zod";
-
 import { HTTPException } from "hono/http-exception";
 
+// ----------------------------
+// List Webhooks for AppUser
+// ----------------------------
 export const list: AppRouteHandler<ListRoute> = async (c) => {
-  const orgId = c.get("orgId");
-
+  const jwt = c.get("jwtPayload");
+  const params = c.req.valid("param");
+  // Ensure the app user exists and its application belongs to the authenticated user
+  const appUser = await prisma.appUser.findUnique({
+    where: { id: params.id },
+    include: { application: true },
+  });
+  if (!appUser || appUser.application.userId !== jwt.id) {
+    throw new HTTPException(404, {
+      message: "AppUser not found",
+      cause: { success: false },
+    });
+  }
   const webhooks = await prisma.webhook.findMany({
-    where: {
-      orgId,
-    },
+    where: { appUserId: params.id },
+    include: { eventTypes: true },
   });
-
-  const parsedWebhook = z.array(WebhookSchema).parse(webhooks);
-
-  return c.json({
-    success: true,
-    data: parsedWebhook,
-  });
+  const data = webhooks.map((w) => ({
+    ...w,
+    eventTypes: w.eventTypes ?? [],
+    appUserId: w.appUserId === null ? undefined : w.appUserId,
+    createdAt: w.createdAt.toISOString(),
+    updatedAt: w.updatedAt.toISOString(),
+  }));
+  const parsed = z.array(WebhookSchema).parse(data);
+  return c.json({ success: true, data: parsed });
 };
 
+// ----------------------------
+// Create Webhook for AppUser
+// ----------------------------
 export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
-  const orgId = c.get("orgId");
+  const jwt = c.get("jwtPayload");
+  const params = c.req.valid("param");
   const body = c.req.valid("json");
-
-  const createdWebhook = await prisma.webhook.create({
-    data: {
-      ...body,
-      orgId,
-    },
+  // Ensure the app user exists and its application belongs to the authenticated user
+  const appUser = await prisma.appUser.findUnique({
+    where: { id: params.id },
+    include: { application: true },
   });
-
-  return c.json({ success: true, data: createdWebhook }, 201);
+  if (!appUser || appUser.application.userId !== jwt.id) {
+    throw new HTTPException(404, {
+      message: "AppUser not found",
+      cause: { success: false },
+    });
+  }
+  // Prepare data for create: attach appUserId and orgId (application id)
+  const { eventTypes, ...rest } = body;
+  const data: any = { ...rest, appUserId: params.id, orgId: appUser.applicationId };
+  if (eventTypes && Array.isArray(eventTypes) && eventTypes.length > 0) {
+    data.eventTypes = { connect: eventTypes.map((et: any) => ({ id: et.id ?? et })) };
+  }
+  const created = await prisma.webhook.create({ data, include: { eventTypes: true } });
+  const result = {
+    ...created,
+    eventTypes: created.eventTypes ?? [],
+    appUserId: created.appUserId === null ? undefined : created.appUserId,
+    createdAt: created.createdAt.toISOString(),
+    updatedAt: created.updatedAt.toISOString(),
+  };
+  const parsed = WebhookSchema.parse(result);
+  return c.json({ success: true, data: parsed }, 201);
 };
 
+// ----------------------------
+// Get One Webhook for AppUser
+// ----------------------------
 export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
-  const orgId = c.get("orgId");
+  const jwt = c.get("jwtPayload");
   const params = c.req.valid("param");
-
-  const webhook = await prisma.webhook.findUnique({
-    where: {
-      orgId,
-      id: params.id,
-    },
+  // Ensure the app user exists and belongs to the authenticated user
+  const appUser = await prisma.appUser.findUnique({
+    where: { id: params.id },
+    include: { application: true },
   });
-
+  if (!appUser || appUser.application.userId !== jwt.id) {
+    throw new HTTPException(404, {
+      message: "AppUser not found",
+      cause: { success: false },
+    });
+  }
+  const webhook = await prisma.webhook.findFirst({
+    where: { appUserId: params.id, id: params.webhookId },
+    include: { eventTypes: true },
+  });
   if (!webhook) {
-    throw new HTTPException(404, { message: "Not found", cause: { success: false } });
+    throw new HTTPException(404, {
+      message: "Webhook not found",
+      cause: { success: false },
+    });
   }
-
-  return c.json({ success: true, data: webhook }, 200);
+  const result = {
+    ...webhook,
+    eventTypes: webhook.eventTypes ?? [],
+    appUserId: webhook.appUserId === null ? undefined : webhook.appUserId,
+    createdAt: webhook.createdAt.toISOString(),
+    updatedAt: webhook.updatedAt.toISOString(),
+  };
+  const parsed = WebhookSchema.parse(result);
+  return c.json({ success: true, data: parsed }, 200);
 };
 
+// ----------------------------
+// Update Webhook for AppUser
+// ----------------------------
 export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
-  const orgId = c.get("orgId");
+  const jwt = c.get("jwtPayload");
   const params = c.req.valid("param");
-  const updates = c.req.valid("json");
-
-  const editedWebhook = await prisma.webhook.update({
-    where: {
-      orgId,
-      id: params.id,
-    },
-    data: updates,
+  const body = c.req.valid("json");
+  // Ensure the app user exists and belongs to the authenticated user
+  const appUser = await prisma.appUser.findUnique({
+    where: { id: params.id },
+    include: { application: true },
   });
-
-  if (!editedWebhook) {
-    throw new HTTPException(404, { message: "Not found", cause: { success: false } });
+  if (!appUser || appUser.application.userId !== jwt.id) {
+    throw new HTTPException(404, {
+      message: "AppUser not found",
+      cause: { success: false },
+    });
   }
-
-  return c.json({ success: true, data: editedWebhook }, 200);
+  const webhook = await prisma.webhook.findFirst({
+    where: { appUserId: params.id, id: params.webhookId },
+    include: { eventTypes: true },
+  });
+  if (!webhook) {
+    throw new HTTPException(404, {
+      message: "Webhook not found",
+      cause: { success: false },
+    });
+  }
+  // Prepare data for update: eventTypes must be set via set if present
+  const { eventTypes: updateEventTypes, ...updateRest } = body;
+  const updateData: any = { ...updateRest };
+  if (body.appUserId !== undefined) updateData.appUserId = body.appUserId;
+  if (updateEventTypes && Array.isArray(updateEventTypes)) {
+    updateData.eventTypes = {
+      set: updateEventTypes.map((et: any) => ({ id: et.id ?? et })),
+    };
+  }
+  const edited = await prisma.webhook.update({
+    where: { id: params.webhookId },
+    data: updateData,
+    include: { eventTypes: true },
+  });
+  const result = {
+    ...edited,
+    eventTypes: edited.eventTypes ?? [],
+    appUserId: edited.appUserId === null ? undefined : edited.appUserId,
+    createdAt: edited.createdAt.toISOString(),
+    updatedAt: edited.updatedAt.toISOString(),
+  };
+  const parsed = WebhookSchema.parse(result);
+  return c.json({ success: true, data: parsed }, 200);
 };
 
+// ----------------------------
+// Delete Webhook for AppUser
+// ----------------------------
 export const remove: RouteHandler<RemoveRoute, AppBindings> = async (c) => {
-  const orgId = c.get("orgId");
+  const jwt = c.get("jwtPayload");
   const params = c.req.valid("param");
-
-  const deletedWebhook = await prisma.webhook.findUnique({
-    where: {
-      orgId: orgId,
-      id: params.id,
-    },
+  // Ensure the app user exists and belongs to the authenticated user
+  const appUser = await prisma.appUser.findUnique({
+    where: { id: params.id },
+    include: { application: true },
   });
-
-  if (!deletedWebhook) {
-    throw new HTTPException(404, { message: "Not found", cause: { success: false } });
+  if (!appUser || appUser.application.userId !== jwt.id) {
+    throw new HTTPException(404, {
+      message: "AppUser not found",
+      cause: { success: false },
+    });
   }
-
-  return c.json({ success: true, data: { id: params.id } }, 200);
+  const webhook = await prisma.webhook.findFirst({
+    where: { appUserId: params.id, id: params.webhookId },
+  });
+  if (!webhook) {
+    throw new HTTPException(404, {
+      message: "Webhook not found",
+      cause: { success: false },
+    });
+  }
+  await prisma.webhook.delete({ where: { id: params.webhookId } });
+  return c.json({ success: true, data: { id: params.webhookId } }, 200);
 };
