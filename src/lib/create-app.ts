@@ -28,6 +28,7 @@ export function createApp() {
   // app.use(logger())
 
   app.use("/applications/*", auth());
+  app.use("/app-users/*", auth());
 
   app.notFound(notFound);
   app.onError(onError);
