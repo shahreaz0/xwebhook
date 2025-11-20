@@ -1,12 +1,10 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
+import { cors } from "hono/cors";
 import { requestId } from "hono/request-id";
 import { notFound, onError, serveEmojiFavicon } from "stoker/middlewares";
-
-import type { AppBindings, AppOpenAPI } from "@/lib/types";
 // import { logger } from "@/middlewares/pino-logger"
 import { defaultHook } from "stoker/openapi";
-
-import { cors } from "hono/cors";
+import type { AppBindings, AppOpenAPI } from "@/lib/types";
 import { auth } from "@/middlewares/auth";
 
 export function createRouter() {

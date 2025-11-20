@@ -1,7 +1,6 @@
+import { createRoute, z } from "@hono/zod-openapi";
 import packageJSON from "package.json";
 import { createRouter } from "@/lib/create-app";
-import { createRoute, z } from "@hono/zod-openapi";
-import { version } from "bun";
 
 export const index = createRouter().openapi(
   createRoute({
@@ -25,12 +24,11 @@ export const index = createRouter().openapi(
       },
     },
   }),
-  (c) => {
-    return c.json({
+  (c) =>
+    c.json({
       name: "webhook service",
       status: "OK",
       version: packageJSON.version,
       timestamp: Date.now(),
-    });
-  }
+    })
 );

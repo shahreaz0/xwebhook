@@ -1,9 +1,9 @@
 import { createRoute } from "@hono/zod-openapi";
-import { NotFoundSchema } from "@/lib/schema-contants";
 import { createErrorSchema } from "stoker/openapi/schemas";
+import { NotFoundSchema } from "@/lib/schema-contants";
 import {
-  AppUserSchema,
   AppUserCreateSchema,
+  AppUserSchema,
   AppUserUpdateSchema,
 } from "./appusers.schemas";
 
@@ -25,7 +25,8 @@ export const list = createRoute({
   method: "get",
   path: "/applications/{id}/app-users",
   summary: "List application users for an application",
-  description: "Retrieve a list of application users for the specified application.",
+  description:
+    "Retrieve a list of application users for the specified application.",
   request: { params: appIdParamsSchema },
   responses: {
     200: {
@@ -101,7 +102,9 @@ export const getOne = createRoute({
     },
     422: {
       description: "Unprocessable Entity — invalid path parameter (userId).",
-      content: { "application/json": { schema: createErrorSchema(appUserParamsSchema) } },
+      content: {
+        "application/json": { schema: createErrorSchema(appUserParamsSchema) },
+      },
     },
     404: {
       description: "Not Found — no app user exists with the provided userId.",
@@ -148,7 +151,8 @@ export const patch = createRoute({
       },
     },
     404: {
-      description: "Not Found — no app user exists with the provided userId to update.",
+      description:
+        "Not Found — no app user exists with the provided userId to update.",
       content: { "application/json": { schema: NotFoundSchema } },
     },
   },
@@ -159,23 +163,30 @@ export const remove = createRoute({
   method: "delete",
   path: "/applications/{id}/app-users/{userId}",
   summary: "Delete an application user",
-  description: "Delete the AppUser identified by userId for the specified application.",
+  description:
+    "Delete the AppUser identified by userId for the specified application.",
   request: { params: appUserParamsSchema },
   responses: {
     200: {
       description: "OK — app user deleted successfully.",
       content: {
         "application/json": {
-          schema: z.object({ success: z.boolean(), data: z.object({ id: z.string() }) }),
+          schema: z.object({
+            success: z.boolean(),
+            data: z.object({ id: z.string() }),
+          }),
         },
       },
     },
     422: {
       description: "Unprocessable Entity — invalid path parameters (userId).",
-      content: { "application/json": { schema: createErrorSchema(appUserParamsSchema) } },
+      content: {
+        "application/json": { schema: createErrorSchema(appUserParamsSchema) },
+      },
     },
     404: {
-      description: "Not Found — no app user exists with the provided userId to delete.",
+      description:
+        "Not Found — no app user exists with the provided userId to delete.",
       content: { "application/json": { schema: NotFoundSchema } },
     },
   },

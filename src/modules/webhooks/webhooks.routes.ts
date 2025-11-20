@@ -1,9 +1,9 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
 import { createErrorSchema } from "stoker/openapi/schemas";
+import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
 import {
-  WebhookSchema,
   WebhookCreateSchema,
+  WebhookSchema,
   WebhookUpdateSchema,
 } from "./webhooks.schemas";
 
@@ -95,7 +95,9 @@ export const getOne = createRoute({
     },
     422: {
       description: "Unprocessable Entity — invalid path parameter (webhookId).",
-      content: { "application/json": { schema: createErrorSchema(webhookParamsSchema) } },
+      content: {
+        "application/json": { schema: createErrorSchema(webhookParamsSchema) },
+      },
     },
     404: {
       description: "Not Found — no webhook exists with the provided webhookId.",
@@ -142,7 +144,8 @@ export const patch = createRoute({
       },
     },
     404: {
-      description: "Not Found — no webhook exists with the provided webhookId to update.",
+      description:
+        "Not Found — no webhook exists with the provided webhookId to update.",
       content: { "application/json": { schema: NotFoundSchema } },
     },
   },
@@ -153,23 +156,31 @@ export const remove = createRoute({
   method: "delete",
   path: "/app-users/{id}/webhooks/{webhookId}",
   summary: "Delete a webhook for an app user",
-  description: "Delete the webhook identified by webhookId for the specified app user.",
+  description:
+    "Delete the webhook identified by webhookId for the specified app user.",
   request: { params: webhookParamsSchema },
   responses: {
     200: {
       description: "OK — webhook deleted successfully.",
       content: {
         "application/json": {
-          schema: z.object({ success: z.boolean(), data: z.object({ id: z.string() }) }),
+          schema: z.object({
+            success: z.boolean(),
+            data: z.object({ id: z.string() }),
+          }),
         },
       },
     },
     422: {
-      description: "Unprocessable Entity — invalid path parameters (webhookId).",
-      content: { "application/json": { schema: createErrorSchema(webhookParamsSchema) } },
+      description:
+        "Unprocessable Entity — invalid path parameters (webhookId).",
+      content: {
+        "application/json": { schema: createErrorSchema(webhookParamsSchema) },
+      },
     },
     404: {
-      description: "Not Found — no webhook exists with the provided webhookId to delete.",
+      description:
+        "Not Found — no webhook exists with the provided webhookId to delete.",
       content: { "application/json": { schema: NotFoundSchema } },
     },
   },

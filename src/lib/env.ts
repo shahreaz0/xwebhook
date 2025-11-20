@@ -1,7 +1,6 @@
-import { ZodError, z } from "zod";
-
 import path from "node:path";
 import dotenv from "dotenv";
+import { ZodError, z } from "zod";
 
 dotenv.config({
   path: path.resolve(
@@ -11,8 +10,18 @@ dotenv.config({
 });
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]),
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
+  LOG_LEVEL: z.enum([
+    "fatal",
+    "error",
+    "warn",
+    "info",
+    "debug",
+    "trace",
+    "silent",
+  ]),
   PORT: z.coerce.number().default(8088),
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string(),

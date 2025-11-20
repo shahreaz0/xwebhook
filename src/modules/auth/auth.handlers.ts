@@ -1,12 +1,10 @@
-import type { AppBindings } from "@/lib/types";
 import type { RouteHandler } from "@hono/zod-openapi";
-
-import type { RegisterRoute, LoginRoute } from "./auth.routes";
-
-import { prisma } from "prisma";
 import { HTTPException } from "hono/http-exception";
-import { hashPassword, signJwt, verifyPassword } from "./auth.services";
+import { prisma } from "prisma";
 import { env } from "@/lib/env";
+import type { AppBindings } from "@/lib/types";
+import type { LoginRoute, RegisterRoute } from "./auth.routes";
+import { hashPassword, signJwt, verifyPassword } from "./auth.services";
 
 export const register: RouteHandler<RegisterRoute, AppBindings> = async (c) => {
   const body = c.req.valid("json");

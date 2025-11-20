@@ -1,9 +1,9 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
 import { createErrorSchema } from "stoker/openapi/schemas";
+import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
 import {
-  ApplicationSchema,
   ApplicationCreateSchema,
+  ApplicationSchema,
   ApplicationUpdateSchema,
 } from "./applications.schemas";
 
@@ -87,7 +87,8 @@ export const getOne = createRoute({
   method: "get",
   path: "/applications/{id}",
   summary: "Retrieve an application by ID",
-  description: "Retrieve the details of a single application identified by {id}.",
+  description:
+    "Retrieve the details of a single application identified by {id}.",
   request: {
     params: IdParamsSchema,
   },
@@ -157,7 +158,8 @@ export const patch = createRoute({
       },
     },
     422: {
-      description: "Unprocessable Entity — validation error for body or path parameters.",
+      description:
+        "Unprocessable Entity — validation error for body or path parameters.",
       content: {
         "application/json": {
           schema: z.union([
@@ -168,7 +170,8 @@ export const patch = createRoute({
       },
     },
     404: {
-      description: "Not Found — no application exists with the provided id to update.",
+      description:
+        "Not Found — no application exists with the provided id to update.",
       content: {
         "application/json": {
           schema: NotFoundSchema,
@@ -197,7 +200,10 @@ export const remove = createRoute({
         "OK — application deleted successfully. Response includes the id of the removed application.",
       content: {
         "application/json": {
-          schema: z.object({ success: z.boolean(), data: z.object({ id: z.string() }) }),
+          schema: z.object({
+            success: z.boolean(),
+            data: z.object({ id: z.string() }),
+          }),
         },
       },
     },
@@ -210,7 +216,8 @@ export const remove = createRoute({
       },
     },
     404: {
-      description: "Not Found — no application exists with the provided id to delete.",
+      description:
+        "Not Found — no application exists with the provided id to delete.",
       content: {
         "application/json": {
           schema: NotFoundSchema,
