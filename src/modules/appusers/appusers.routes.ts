@@ -1,5 +1,5 @@
 import { createRoute } from "@hono/zod-openapi";
-import { notFoundSchema } from "@/lib/schema-contants";
+import { NotFoundSchema } from "@/lib/schema-contants";
 import { createErrorSchema } from "stoker/openapi/schemas";
 import {
   AppUserSchema,
@@ -105,7 +105,7 @@ export const getOne = createRoute({
     },
     404: {
       description: "Not Found — no app user exists with the provided userId.",
-      content: { "application/json": { schema: notFoundSchema } },
+      content: { "application/json": { schema: NotFoundSchema } },
     },
   },
 });
@@ -149,7 +149,7 @@ export const patch = createRoute({
     },
     404: {
       description: "Not Found — no app user exists with the provided userId to update.",
-      content: { "application/json": { schema: notFoundSchema } },
+      content: { "application/json": { schema: NotFoundSchema } },
     },
   },
 });
@@ -176,7 +176,7 @@ export const remove = createRoute({
     },
     404: {
       description: "Not Found — no app user exists with the provided userId to delete.",
-      content: { "application/json": { schema: notFoundSchema } },
+      content: { "application/json": { schema: NotFoundSchema } },
     },
   },
 });

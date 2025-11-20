@@ -1,5 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { idParamsSchema, notFoundSchema } from "@/lib/schema-contants";
+import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
 import { createErrorSchema } from "stoker/openapi/schemas";
 import {
   ApplicationSchema,
@@ -89,7 +89,7 @@ export const getOne = createRoute({
   summary: "Retrieve an application by ID",
   description: "Retrieve the details of a single application identified by {id}.",
   request: {
-    params: idParamsSchema,
+    params: IdParamsSchema,
   },
   responses: {
     200: {
@@ -107,7 +107,7 @@ export const getOne = createRoute({
       description: "Unprocessable Entity — invalid path parameter (id).",
       content: {
         "application/json": {
-          schema: createErrorSchema(idParamsSchema),
+          schema: createErrorSchema(IdParamsSchema),
         },
       },
     },
@@ -115,7 +115,7 @@ export const getOne = createRoute({
       description: "Not Found — no application exists with the provided id.",
       content: {
         "application/json": {
-          schema: notFoundSchema,
+          schema: NotFoundSchema,
         },
       },
     },
@@ -133,7 +133,7 @@ export const patch = createRoute({
   description:
     "Partially update an existing application identified by {id}. Only provided fields will be changed. Returns the updated application.",
   request: {
-    params: idParamsSchema,
+    params: IdParamsSchema,
     body: {
       description:
         "Partial application fields to update (only provided fields will be applied).",
@@ -162,7 +162,7 @@ export const patch = createRoute({
         "application/json": {
           schema: z.union([
             createErrorSchema(ApplicationUpdateSchema),
-            createErrorSchema(idParamsSchema),
+            createErrorSchema(IdParamsSchema),
           ]),
         },
       },
@@ -171,7 +171,7 @@ export const patch = createRoute({
       description: "Not Found — no application exists with the provided id to update.",
       content: {
         "application/json": {
-          schema: notFoundSchema,
+          schema: NotFoundSchema,
         },
       },
     },
@@ -189,7 +189,7 @@ export const remove = createRoute({
   description:
     "Delete the application identified by {id} for the authenticated user. This operation permanently removes the application.",
   request: {
-    params: idParamsSchema,
+    params: IdParamsSchema,
   },
   responses: {
     200: {
@@ -205,7 +205,7 @@ export const remove = createRoute({
       description: "Unprocessable Entity — invalid path parameters (id).",
       content: {
         "application/json": {
-          schema: createErrorSchema(idParamsSchema),
+          schema: createErrorSchema(IdParamsSchema),
         },
       },
     },
@@ -213,7 +213,7 @@ export const remove = createRoute({
       description: "Not Found — no application exists with the provided id to delete.",
       content: {
         "application/json": {
-          schema: notFoundSchema,
+          schema: NotFoundSchema,
         },
       },
     },

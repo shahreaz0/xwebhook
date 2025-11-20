@@ -1,5 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { idParamsSchema, notFoundSchema } from "@/lib/schema-contants";
+import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
 import { createErrorSchema } from "stoker/openapi/schemas";
 import {
   WebhookSchema,
@@ -10,7 +10,7 @@ import {
 const tags = ["Webhooks"];
 
 // Params for /app-users/:id/webhooks/:webhookId
-const webhookParamsSchema = idParamsSchema.extend({
+const webhookParamsSchema = IdParamsSchema.extend({
   webhookId: z.cuid2(),
 });
 
@@ -20,7 +20,7 @@ export const list = createRoute({
   path: "/app-users/{id}/webhooks",
   summary: "List webhooks for an app user",
   description: "Retrieve a list of webhooks for the specified app user.",
-  request: { params: idParamsSchema },
+  request: { params: IdParamsSchema },
   responses: {
     200: {
       description: "OK — list returned successfully.",
@@ -43,7 +43,7 @@ export const create = createRoute({
   summary: "Create a new webhook for an app user",
   description: "Create a new webhook for the specified app user.",
   request: {
-    params: idParamsSchema,
+    params: IdParamsSchema,
     body: {
       description: "The webhook to create",
       content: {
@@ -99,7 +99,7 @@ export const getOne = createRoute({
     },
     404: {
       description: "Not Found — no webhook exists with the provided webhookId.",
-      content: { "application/json": { schema: notFoundSchema } },
+      content: { "application/json": { schema: NotFoundSchema } },
     },
   },
 });
@@ -143,7 +143,7 @@ export const patch = createRoute({
     },
     404: {
       description: "Not Found — no webhook exists with the provided webhookId to update.",
-      content: { "application/json": { schema: notFoundSchema } },
+      content: { "application/json": { schema: NotFoundSchema } },
     },
   },
 });
@@ -170,7 +170,7 @@ export const remove = createRoute({
     },
     404: {
       description: "Not Found — no webhook exists with the provided webhookId to delete.",
-      content: { "application/json": { schema: notFoundSchema } },
+      content: { "application/json": { schema: NotFoundSchema } },
     },
   },
 });
