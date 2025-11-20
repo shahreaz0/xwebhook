@@ -8,14 +8,18 @@ export function configureOpenAPI(app: AppOpenAPI) {
     openapi: "3.0.0",
     info: {
       version: packageJSON.version,
-      title: "Al-Hira API",
-      description: "Al-Hira organization API",
+      title: "xwebhook",
+      description: "Webhook as a Service",
     },
+
+    security: [{ Bearer: [] }],
   });
 
   app.openAPIRegistry.registerComponent("securitySchemes", "Bearer", {
     type: "http",
     scheme: "bearer",
+    description: "Use the Bearer token for authentication",
+    bearerFormat: "JWT",
   });
 
   app.get(
@@ -23,6 +27,11 @@ export function configureOpenAPI(app: AppOpenAPI) {
     Scalar({
       spec: {
         url: "/doc",
+      },
+
+      metaData: {
+        title: "xwebhook",
+        description: "xwebhook - a webhook service",
       },
     })
   );

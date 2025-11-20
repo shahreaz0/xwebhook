@@ -7,7 +7,7 @@ export async function callWebhooks(event: string, orgId: string, payload: any) {
   const webhooks = await prisma.webhook.findMany({
     where: {
       orgId: orgId,
-      event: event,
+      // event: event,
     },
   });
 
@@ -18,11 +18,11 @@ export async function callWebhooks(event: string, orgId: string, payload: any) {
       method: "post",
       url: wh.url,
       data: {
-        event: wh.event,
+        // event: wh.event,
         data: payload,
       },
       headers: {
-        "x-webhook-secret": wh.token,
+        // "x-webhook-secret": wh.token,
       },
     });
     promises.push(pro);
