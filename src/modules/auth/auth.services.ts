@@ -1,6 +1,7 @@
 // lib/auth/jwt.ts
-import { SignJWT, jwtVerify } from "jose";
+
 import { hash as argonHash, verify as argonVerify } from "argon2";
+import { jwtVerify, SignJWT } from "jose";
 
 const encoder = new TextEncoder();
 
@@ -18,7 +19,10 @@ export async function signJwt(
     .sign(key);
 }
 
-export async function verifyJwt<T = unknown>(token: string, secret: string): Promise<T> {
+export async function verifyJwt<T = unknown>(
+  token: string,
+  secret: string
+): Promise<T> {
   const key = encoder.encode(secret);
 
   const { payload } = await jwtVerify(token, key, {
@@ -37,6 +41,9 @@ export async function hashPassword(password: string): Promise<string> {
   });
 }
 
-export async function verifyPassword(hashed: string, plain: string): Promise<boolean> {
+export async function verifyPassword(
+  hashed: string,
+  plain: string
+): Promise<boolean> {
   return await argonVerify(hashed, plain);
 }

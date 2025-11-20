@@ -9,6 +9,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ---------------------------------
+// Enums
+// ---------------------------------
+
+enum MessageStatus {
+  PENDING // waiting to be sent
+  PROCESSING // currently sending
+  DELIVERED // successfully sent
+  FAILED // failed
+  RETRYING // failed before but retrying
+  SKIPPED // intentionally not sent
+  EXPIRED // delivery expired
+}
+
+// ---------------------------------
+// Models
+// ---------------------------------
 model User {
   id       String  @id @default(cuid(2))
   email    String  @unique
@@ -78,23 +95,24 @@ model AppUser {
 }
 
 model Webhook {
-  id          String      @id @default(cuid(2))
+  id          String   @id @default(cuid(2))
   orgId       String
-  eventTypes  EventType[]
   url         String
   secrets     String
   description String?
-  disabled    Boolean     @default(false)
+  disabled    Boolean  @default(false)
   metadata    Json?
   rateLimit   Int?
   eventId     String
-  appUser     AppUser?    @relation(fields: [appUserId], references: [id])
+  appUser     AppUser? @relation(fields: [appUserId], references: [id])
   appUserId   String?
+
+  eventTypes WebhookEventType[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([appUserId, url]) // Prevent duplicate webhook per app user
+  @@unique([appUserId, url])
   @@index([appUserId])
   @@index([orgId])
   @@index([url])
@@ -109,27 +127,26 @@ model EventType {
   applicationId String
   application   Application @relation(fields: [applicationId], references: [id])
 
-  webhook   Webhook?  @relation(fields: [webhookId], references: [id])
-  webhookId String?
-  messages  Message[]
+  messages           Message[]
+  webhookConnections WebhookEventType[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([applicationId, name])
-  @@index([webhookId])
   @@index([orgId])
   @@index([applicationId])
 }
 
-enum MessageStatus {
-  PENDING // waiting to be sent
-  PROCESSING // currently sending
-  DELIVERED // successfully sent
-  FAILED // failed
-  RETRYING // failed before but retrying
-  SKIPPED // intentionally not sent
-  EXPIRED // delivery expired
+model WebhookEventType {
+  webhookId   String
+  eventTypeId String
+
+  webhook   Webhook   @relation(fields: [webhookId], references: [id])
+  eventType EventType @relation(fields: [eventTypeId], references: [id])
+
+  @@id([webhookId, eventTypeId])
+  @@index([eventTypeId])
 }
 
 model Message {

@@ -1,5 +1,8 @@
-import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type { RouteHandler } from "@hono/zod-openapi";
+import { HTTPException } from "hono/http-exception";
+import { prisma } from "prisma";
+import { z } from "zod";
+import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type {
   CreateRoute,
   GetOneRoute,
@@ -7,10 +10,7 @@ import type {
   PatchRoute,
   RemoveRoute,
 } from "./applications.routes";
-import { prisma } from "prisma";
 import { ApplicationSchema } from "./applications.schemas";
-import { z } from "zod";
-import { HTTPException } from "hono/http-exception";
 
 // ----------------------------
 // List Applications

@@ -1,7 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { AuthUserSchema, LoginSchema, RegisterSchema } from "./auth.schemas";
 import { createHttpErrorSchema } from "@/lib/schema-contants";
+import { AuthUserSchema, LoginSchema, RegisterSchema } from "./auth.schemas";
 
 const tags = ["Auth"];
 
@@ -48,7 +48,8 @@ export const register = createRoute({
       },
     },
     422: {
-      description: "Unprocessable Entity — validation failed; see `errors` for details.",
+      description:
+        "Unprocessable Entity — validation failed; see `errors` for details.",
       content: {
         "application/json": {
           schema: createErrorSchema(RegisterSchema),

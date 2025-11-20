@@ -1,5 +1,8 @@
-import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type { RouteHandler } from "@hono/zod-openapi";
+import { HTTPException } from "hono/http-exception";
+import { prisma } from "prisma";
+import { z } from "zod";
+import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type {
   CreateRoute,
   GetOneRoute,
@@ -7,10 +10,7 @@ import type {
   PatchRoute,
   RemoveRoute,
 } from "./appusers.routes";
-import { prisma } from "prisma";
 import { AppUserSchema } from "./appusers.schemas";
-import { z } from "zod";
-import { HTTPException } from "hono/http-exception";
 
 // ----------------------------
 // List AppUsers
@@ -26,7 +26,9 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       cause: { success: false },
     });
   }
-  const appUsers = await prisma.appUser.findMany({ where: { applicationId: params.id } });
+  const appUsers = await prisma.appUser.findMany({
+    where: { applicationId: params.id },
+  });
   const parsed = z.array(AppUserSchema).parse(appUsers);
   return c.json({ success: true, data: parsed });
 };
