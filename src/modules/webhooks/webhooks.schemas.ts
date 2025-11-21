@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { IdParamsSchema } from "@/lib/schema-contants";
 
 export const WebhookSchema = z.object({
   id: z.cuid2().openapi({ example: "ckwxyz123456abcdef12345" }),
@@ -29,3 +30,7 @@ export const WebhookCreateSchema = WebhookSchema.omit({
 });
 
 export const WebhookUpdateSchema = WebhookCreateSchema.partial();
+
+export const WebhookParamsSchema = IdParamsSchema.extend({
+  webhookId: z.cuid2(),
+});

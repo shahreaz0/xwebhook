@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { IdParamsSchema } from "@/lib/schema-contants";
 
 export const EventTypeSchema = z.object({
   id: z.cuid2().openapi({ example: "ckz1234560000abcdef12345" }),
@@ -21,3 +22,7 @@ export const EventTypeCreateSchema = EventTypeSchema.omit({
 });
 
 export const EventTypeUpdateSchema = EventTypeCreateSchema.partial();
+
+export const EventTypeParamsSchema = IdParamsSchema.extend({
+  eventTypeId: z.cuid2(),
+});
