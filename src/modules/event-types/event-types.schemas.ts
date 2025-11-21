@@ -17,6 +17,7 @@ export const EventTypeCreateSchema = EventTypeSchema.omit({
   createdAt: true,
   updatedAt: true,
   orgId: true, // We will set this in handler from jwtPayload or similar
+  applicationId: true,
 });
 
 export const EventTypeUpdateSchema = EventTypeCreateSchema.partial();

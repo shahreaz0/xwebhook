@@ -1,13 +1,13 @@
 import { configureOpenAPI } from "@/lib/configure-openapi";
 import { createApp } from "@/lib/create-app";
+import { appUsers } from "./modules/app-users/app-users.index";
 import { applications } from "./modules/applications/applications.index";
-import { appUsers } from "./modules/appusers/appusers.index";
 import { auth } from "./modules/auth/auth.index";
 import { eventTypes } from "./modules/event-types/event-types.index";
 import { index } from "./modules/index/index.routes";
 import { webhooks } from "./modules/webhooks/webhooks.index";
 
-const routes = [index, auth, applications, appUsers, webhooks, eventTypes];
+const routes = [index, auth, applications, appUsers, eventTypes, webhooks];
 
 export const app = createApp();
 

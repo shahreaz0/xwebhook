@@ -5,7 +5,7 @@ import {
   AppUserCreateSchema,
   AppUserSchema,
   AppUserUpdateSchema,
-} from "./appusers.schemas";
+} from "./app-users.schemas";
 
 const tags = ["AppUsers"];
 
