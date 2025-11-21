@@ -9,8 +9,8 @@ import type {
   ListRoute,
   PatchRoute,
   RemoveRoute,
-} from "./appusers.routes";
-import { AppUserSchema } from "./appusers.schemas";
+} from "./app-users.routes";
+import { AppUserSchema } from "./app-users.schemas";
 
 // ----------------------------
 // List AppUsers

@@ -1,11 +1,6 @@
-import { logger } from "@/lib/logger";
-// import { PrismaClient } from "../generated/prisma/client";
-
-// export const prisma = new PrismaClient();
-
 import { PrismaPg } from "@prisma/adapter-pg";
-// import { PrismaClient } from "@prisma/client";
-import { PrismaClient } from "../generated/prisma/client";
+import { logger } from "@/lib/logger";
+import { PrismaClient } from "../generated/prisma/client.ts";
 
 const connectionString = `${process.env.DATABASE_URL}`;
 

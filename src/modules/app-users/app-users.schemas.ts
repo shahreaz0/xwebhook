@@ -14,6 +14,7 @@ export const AppUserCreateSchema = AppUserSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  applicationId: true,
 });
 
 export const AppUserUpdateSchema = AppUserCreateSchema.partial();

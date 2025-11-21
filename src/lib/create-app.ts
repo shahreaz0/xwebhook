@@ -27,6 +27,7 @@ export function createApp() {
 
   app.use("/applications/*", auth());
   app.use("/app-users/*", auth());
+  app.use("/event-types/*", auth());
 
   app.notFound(notFound);
   app.onError(onError);
