@@ -1,6 +1,6 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
+import { NotFoundSchema } from "@/lib/schema-contants";
 import {
   EventTypeCreateSchema,
   EventTypeSchema,
@@ -9,16 +9,29 @@ import {
 
 const tags = ["Event Types"];
 
+// Params for /applications/:id
+const appIdParamsSchema = z.object({
+  id: z.cuid2(),
+});
+
+// Params for /applications/:id/event-types/:eventTypeId
+const eventTypeParamsSchema = appIdParamsSchema.extend({
+  eventTypeId: z.cuid2(),
+});
+
 // ----------------------------
 // List Event Types
 // ----------------------------
 export const list = createRoute({
   tags,
   method: "get",
-  path: "/event-types",
+  path: "/applications/{id}/event-types",
   summary: "List event types",
   description:
-    "Retrieve a list of event types. Supports paging and filtering (if provided by query parameters).",
+    "Retrieve a list of event types for the specified application. Supports paging and filtering (if provided by query parameters).",
+  request: {
+    params: appIdParamsSchema,
+  },
   responses: {
     200: {
       description:
@@ -41,11 +54,12 @@ export const list = createRoute({
 export const create = createRoute({
   tags,
   method: "post",
-  path: "/event-types",
+  path: "/applications/{id}/event-types",
   summary: "Create a new event type",
   description:
-    "Create a new event type. Provide the name, description and applicationId. Returns the created event type record.",
+    "Create a new event type for the specified application. Provide the name and description. Returns the created event type record.",
   request: {
+    params: appIdParamsSchema,
     body: {
       description: "The event type to create",
       content: {
@@ -85,12 +99,12 @@ export const create = createRoute({
 export const getOne = createRoute({
   tags,
   method: "get",
-  path: "/event-types/{id}",
+  path: "/applications/{id}/event-types/{eventTypeId}",
   summary: "Retrieve an event type by ID",
   description:
-    "Retrieve the details of a single event type identified by {id}.",
+    "Retrieve the details of a single event type identified by {eventTypeId} for the specified application.",
   request: {
-    params: IdParamsSchema,
+    params: eventTypeParamsSchema,
   },
   responses: {
     200: {
@@ -105,10 +119,11 @@ export const getOne = createRoute({
       },
     },
     422: {
-      description: "Unprocessable Entity — invalid path parameter (id).",
+      description:
+        "Unprocessable Entity — invalid path parameter (eventTypeId).",
       content: {
         "application/json": {
-          schema: createErrorSchema(IdParamsSchema),
+          schema: createErrorSchema(eventTypeParamsSchema),
         },
       },
     },
@@ -129,12 +144,12 @@ export const getOne = createRoute({
 export const patch = createRoute({
   tags,
   method: "patch",
-  path: "/event-types/{id}",
+  path: "/applications/{id}/event-types/{eventTypeId}",
   summary: "Update event type",
   description:
-    "Partially update an existing event type identified by {id}. Only provided fields will be changed. Returns the updated event type.",
+    "Partially update an existing event type identified by {eventTypeId} for the specified application. Only provided fields will be changed. Returns the updated event type.",
   request: {
-    params: IdParamsSchema,
+    params: eventTypeParamsSchema,
     body: {
       description:
         "Partial event type fields to update (only provided fields will be applied).",
@@ -164,7 +179,7 @@ export const patch = createRoute({
         "application/json": {
           schema: z.union([
             createErrorSchema(EventTypeUpdateSchema),
-            createErrorSchema(IdParamsSchema),
+            createErrorSchema(eventTypeParamsSchema),
           ]),
         },
       },
@@ -187,12 +202,12 @@ export const patch = createRoute({
 export const remove = createRoute({
   tags,
   method: "delete",
-  path: "/event-types/{id}",
+  path: "/applications/{id}/event-types/{eventTypeId}",
   summary: "Delete event type",
   description:
-    "Delete the event type identified by {id}. This operation permanently removes the event type.",
+    "Delete the event type identified by {eventTypeId} for the specified application. This operation permanently removes the event type.",
   request: {
-    params: IdParamsSchema,
+    params: eventTypeParamsSchema,
   },
   responses: {
     200: {
@@ -208,10 +223,11 @@ export const remove = createRoute({
       },
     },
     422: {
-      description: "Unprocessable Entity — invalid path parameters (id).",
+      description:
+        "Unprocessable Entity — invalid path parameters (eventTypeId).",
       content: {
         "application/json": {
-          schema: createErrorSchema(IdParamsSchema),
+          schema: createErrorSchema(eventTypeParamsSchema),
         },
       },
     },

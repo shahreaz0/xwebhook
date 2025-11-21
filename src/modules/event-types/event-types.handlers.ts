@@ -17,10 +17,22 @@ import { EventTypeSchema } from "./event-types.schemas";
 // ----------------------------
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const jwtPayload = c.get("jwtPayload");
+  const params = c.req.valid("param");
 
-  // Assuming orgId is the userId
+  // Verify application ownership
+  const application = await prisma.application.findUnique({
+    where: { id: params.id },
+  });
+
+  if (!application || application.userId !== jwtPayload.id) {
+    throw new HTTPException(404, {
+      message: "Application not found",
+      cause: { success: false },
+    });
+  }
+
   const eventTypes = await prisma.eventType.findMany({
-    where: { orgId: jwtPayload.id },
+    where: { applicationId: params.id },
   });
 
   const parsedEventTypes = z.array(EventTypeSchema).parse(eventTypes);
@@ -36,16 +48,17 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 // ----------------------------
 export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
   const jwtPayload = c.get("jwtPayload");
+  const params = c.req.valid("param");
   const body = c.req.valid("json");
 
   // Verify application ownership
   const application = await prisma.application.findUnique({
-    where: { id: body.applicationId },
+    where: { id: params.id },
   });
 
   if (!application || application.userId !== jwtPayload.id) {
-    throw new HTTPException(400, {
-      message: "Invalid application ID or application not found",
+    throw new HTTPException(404, {
+      message: "Application not found",
       cause: { success: false },
     });
   }
@@ -53,6 +66,7 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
   const createdEventType = await prisma.eventType.create({
     data: {
       ...body,
+      applicationId: params.id,
       orgId: jwtPayload.id,
     },
   });
@@ -67,11 +81,23 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
   const jwtPayload = c.get("jwtPayload");
   const params = c.req.valid("param");
 
-  const eventType = await prisma.eventType.findUnique({
+  // Verify application ownership
+  const application = await prisma.application.findUnique({
     where: { id: params.id },
   });
 
-  if (!eventType || eventType.orgId !== jwtPayload.id) {
+  if (!application || application.userId !== jwtPayload.id) {
+    throw new HTTPException(404, {
+      message: "Application not found",
+      cause: { success: false },
+    });
+  }
+
+  const eventType = await prisma.eventType.findFirst({
+    where: { id: params.eventTypeId, applicationId: params.id },
+  });
+
+  if (!eventType) {
     throw new HTTPException(404, {
       message: "Event type not found",
       cause: { success: false },
@@ -89,11 +115,23 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
   const params = c.req.valid("param");
   const updates = c.req.valid("json");
 
-  const eventType = await prisma.eventType.findUnique({
+  // Verify application ownership
+  const application = await prisma.application.findUnique({
     where: { id: params.id },
   });
 
-  if (!eventType || eventType.orgId !== jwtPayload.id) {
+  if (!application || application.userId !== jwtPayload.id) {
+    throw new HTTPException(404, {
+      message: "Application not found",
+      cause: { success: false },
+    });
+  }
+
+  const eventType = await prisma.eventType.findFirst({
+    where: { id: params.eventTypeId, applicationId: params.id },
+  });
+
+  if (!eventType) {
     throw new HTTPException(404, {
       message: "Event type not found",
       cause: { success: false },
@@ -101,7 +139,7 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
   }
 
   const editedEventType = await prisma.eventType.update({
-    where: { id: params.id },
+    where: { id: params.eventTypeId },
     data: updates,
   });
 
@@ -115,18 +153,30 @@ export const remove: RouteHandler<RemoveRoute, AppBindings> = async (c) => {
   const jwtPayload = c.get("jwtPayload");
   const params = c.req.valid("param");
 
-  const eventType = await prisma.eventType.findUnique({
+  // Verify application ownership
+  const application = await prisma.application.findUnique({
     where: { id: params.id },
   });
 
-  if (!eventType || eventType.orgId !== jwtPayload.id) {
+  if (!application || application.userId !== jwtPayload.id) {
+    throw new HTTPException(404, {
+      message: "Application not found",
+      cause: { success: false },
+    });
+  }
+
+  const eventType = await prisma.eventType.findFirst({
+    where: { id: params.eventTypeId, applicationId: params.id },
+  });
+
+  if (!eventType) {
     throw new HTTPException(404, {
       message: "Event type not found",
       cause: { success: false },
     });
   }
 
-  await prisma.eventType.delete({ where: { id: params.id } });
+  await prisma.eventType.delete({ where: { id: params.eventTypeId } });
 
-  return c.json({ success: true, data: { id: params.id } }, 200);
+  return c.json({ success: true, data: { id: params.eventTypeId } }, 200);
 };
