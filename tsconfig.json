@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
-    "module": "ES2022",
-    "moduleResolution": "node",
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "resolveJsonModule": true,
     "types": ["@types/bun"],
     "esModuleInterop": true,
@@ -14,7 +14,9 @@
     "paths": {
       "@/*": ["src/*"]
     },
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true
   },
   "include": ["src/**/*"]
 }
