@@ -1,11 +1,19 @@
 import { PrismaPg } from "@prisma/adapter-pg";
+import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { PrismaClient } from "../generated/prisma/client.ts";
 
-const connectionString = `${process.env.DATABASE_URL}`;
+const connectionString = `${env.DATABASE_URL}`;
 
 const adapter = new PrismaPg({ connectionString });
-export const prisma = new PrismaClient({ adapter });
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+export const prisma = globalForPrisma.prisma || new PrismaClient({ adapter });
+
+if (env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
 
 export async function checkDbConnection() {
   try {
