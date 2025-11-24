@@ -25,6 +25,13 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(8088),
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string(),
+
+  // redis
+  REDIS_URL: z.url(),
+  // REDIS_PORT: z.coerce.number().int().min(1).max(65_535),
+  // REDIS_USERNAME: z.string().nonempty().optional(),
+  // REDIS_PASSWORD: z.string().nonempty().optional(),
+  // REDIS_DB: z.coerce.number().int().min(0).optional(),
 });
 
 export let env: z.infer<typeof envSchema>;
