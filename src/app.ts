@@ -5,9 +5,18 @@ import { applications } from "./modules/applications/applications.index";
 import { auth } from "./modules/auth/auth.index";
 import { eventTypes } from "./modules/event-types/event-types.index";
 import { index } from "./modules/index/index.routes";
+import { messages } from "./modules/messages/messages.index";
 import { webhooks } from "./modules/webhooks/webhooks.index";
 
-const routes = [index, auth, applications, appUsers, eventTypes, webhooks];
+const routes = [
+  index,
+  auth,
+  applications,
+  appUsers,
+  eventTypes,
+  webhooks,
+  messages,
+];
 
 export const app = createApp();
 
