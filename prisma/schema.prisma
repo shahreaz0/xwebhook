@@ -94,14 +94,13 @@ model AppUser {
 
 model Webhook {
   id          String   @id @default(cuid(2))
-  orgId       String
   url         String
   secrets     String
   description String?
   disabled    Boolean  @default(false)
   metadata    Json?
   rateLimit   Int?
-  eventId     String
+  // eventId     String
   appUser     AppUser? @relation(fields: [appUserId], references: [id])
   appUserId   String?
 
@@ -112,7 +111,6 @@ model Webhook {
 
   @@unique([appUserId, url])
   @@index([appUserId])
-  @@index([orgId])
   @@index([url])
   @@index([disabled])
 }

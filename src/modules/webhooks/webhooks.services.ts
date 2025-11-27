@@ -3,14 +3,9 @@ import type { XiorResponse } from "xior";
 // import { prisma } from "../../../prisma";
 import { http } from "../../lib/xior";
 
-export async function callWebhooks(
-  _event: string,
-  orgId: string,
-  payload: unknown
-) {
+export async function callWebhooks(payload: unknown) {
   const webhooks = await prisma.webhook.findMany({
     where: {
-      orgId,
       // event: event,
     },
   });
@@ -22,11 +17,10 @@ export async function callWebhooks(
       method: "post",
       url: wh.url,
       data: {
-        // event: wh.event,
         data: payload,
       },
       headers: {
-        // "x-webhook-secret": wh.token,
+        "x-webhook-secret": wh.secrets,
       },
     });
     promises.push(pro);

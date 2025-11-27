@@ -70,7 +70,6 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
     data: {
       ...rest,
       appUserId: params.id,
-      orgId: appUser.applicationId,
       eventTypes: {
         create: eventTypes.map((id) => ({ eventTypeId: id })),
       },
@@ -81,7 +80,7 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
 
   const result = {
     ...created,
-    eventTypes: created.eventId ?? [],
+    eventTypes: created.eventTypes.map((et) => et.eventTypeId),
     appUserId: created.appUserId === null ? undefined : created.appUserId,
   };
 
@@ -164,8 +163,8 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
 
   const updateData: Record<string, unknown> = { ...updateRest };
 
-  if (body.appUserId !== undefined) {
-    updateData.appUserId = body.appUserId;
+  if (params.id !== undefined) {
+    updateData.appUserId = params.id;
   }
 
   if (updateEventTypes) {

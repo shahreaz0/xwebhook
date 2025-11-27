@@ -72,7 +72,7 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
     },
   });
 
-  messagesQueue.add("messages", { message: created, session: jwt });
+  await messagesQueue.add("messages", { message: created, session: jwt });
 
   const result = {
     ...created,

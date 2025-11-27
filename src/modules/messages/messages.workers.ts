@@ -1,48 +1,77 @@
 import { Worker } from "bullmq";
-import { sleep } from "bun";
-import type { Message } from "generated/prisma/client";
+import type { Message, Webhook } from "generated/prisma/client";
 import { prisma } from "prisma";
-import type { XiorResponse } from "xior";
 import { MESSAGE_QUEUE } from "@/configs/bullmq";
 import { redisClient } from "@/configs/redis";
 import { http } from "@/lib/xior";
+
+console.log("Message worker started");
 
 type JobData = {
   message: Message;
   session: { id: string; name: string };
 };
 
+async function deliverMessage(message: Message, wh: Webhook) {
+  try {
+    const response = await http.request({
+      method: "post",
+      url: wh.url,
+      data: {
+        event: message.eventTypeId,
+        data: message.payload,
+      },
+      headers: {
+        "x-webhook-secret": wh.secrets,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    await prisma.message.update({
+      where: { id: message.id },
+      data: { status: "FAILED" },
+    });
+
+    throw new Error("Failed to deliver message", {
+      cause: {
+        error,
+        message,
+      },
+    });
+  }
+}
+
 const worker = new Worker<JobData>(
   MESSAGE_QUEUE,
   async (job) => {
-    await sleep(500);
-
     const appUserId = job.data.message.appUserId;
+
+    console.log("inside worker");
 
     if (!appUserId) {
       throw new Error("AppUser not found");
     }
 
     const webhooks = await prisma.webhook.findMany({
-      where: { appUserId },
+      where: {
+        appUserId,
+        eventTypes: { some: { eventTypeId: job.data.message.eventTypeId } },
+      },
     });
 
-    const promises = [] as Promise<XiorResponse<unknown>>[];
+    if (webhooks.length === 0) {
+      await prisma.message.update({
+        where: { id: job.data.message.id },
+        data: { status: "SKIPPED" },
+      });
+      return;
+    }
+
+    const promises = [] as Promise<unknown>[];
 
     for (const wh of webhooks) {
-      const reqs = http.request({
-        method: "post",
-        url: wh.url,
-        data: {
-          event: job.data.message.eventTypeId,
-          data: job.data.message.payload,
-        },
-        headers: {
-          "x-webhook-secret": wh.secrets,
-        },
-      });
-
-      promises.push(reqs);
+      promises.push(deliverMessage(job.data.message, wh));
     }
 
     const res = await Promise.allSettled(promises);
@@ -51,7 +80,12 @@ const worker = new Worker<JobData>(
       if (r.status === "fulfilled") {
         console.log(r.value);
       } else {
-        console.log(r.reason);
+        throw new Error("Failed to deliver message", {
+          cause: {
+            error: r.reason,
+            message: job.data.message,
+          },
+        });
       }
     }
 
@@ -61,9 +95,10 @@ const worker = new Worker<JobData>(
 );
 
 worker.on("completed", (job) => {
-  console.log(`${job.data} has completed!`);
+  console.log(`${job.id} has completed!`);
 });
 
 worker.on("failed", (job, err) => {
-  console.log(`${job?.data} has failed with ${err.message}`);
+  console.log(`${job?.name} has failed with ${err.cause}`);
+  console.log(err.cause);
 });
