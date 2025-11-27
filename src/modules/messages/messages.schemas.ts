@@ -11,9 +11,9 @@ export const MessageStatusSchema = z.enum([
 ]);
 
 export const MessageSchema = z.object({
-  id: z.string().openapi({ example: "cm3..." }),
-  appUserId: z.string().nullable().openapi({ example: "cm3..." }),
-  eventTypeId: z.string().openapi({ example: "cm3..." }),
+  id: z.cuid2().openapi({ example: "cm3..." }),
+  appUserId: z.cuid2().nullable().openapi({ example: "cm3..." }),
+  eventTypeId: z.cuid2().openapi({ example: "cm3..." }),
   payload: z
     .record(z.string(), z.unknown())
     .openapi({ example: { foo: "bar" } }),
@@ -22,11 +22,12 @@ export const MessageSchema = z.object({
   createdAt: z.string().openapi({ example: "2024-01-01T00:00:00Z" }),
 });
 
-export const MessageCreateSchema = z.object({
-  appUserId: z.string().optional(),
-  eventTypeId: z.string(),
-  payload: z.record(z.string(), z.unknown()),
-  deliverAt: z.string().optional(),
+export const MessageCreateSchema = MessageSchema.omit({
+  id: true,
+  appUserId: true,
+  status: true,
+  createdAt: true,
+  deliverAt: true,
 });
 
 export const MessageUpdateSchema = z.object({
@@ -36,6 +37,6 @@ export const MessageUpdateSchema = z.object({
 });
 
 export const MessageParamsSchema = z.object({
-  id: z.string().openapi({ param: { name: "id", in: "path" } }),
-  messageId: z.string().openapi({ param: { name: "messageId", in: "path" } }),
+  id: z.cuid2().openapi({ param: { name: "id", in: "path" } }),
+  messageId: z.cuid2().openapi({ param: { name: "messageId", in: "path" } }),
 });

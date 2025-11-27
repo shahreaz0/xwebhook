@@ -28,6 +28,8 @@ export function createApp() {
   app.use("/applications/*", auth());
   app.use("/app-users/*", auth());
   app.use("/event-types/*", auth());
+  app.use("/messages/*", auth());
+  app.use("/webhooks/*", auth());
 
   app.notFound(notFound);
   app.onError(onError);

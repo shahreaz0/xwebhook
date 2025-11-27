@@ -1,7 +1,9 @@
 import type { RouteHandler } from "@hono/zod-openapi";
+import type { InputJsonValue } from "generated/prisma/internal/prismaNamespace";
 import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { z } from "zod";
+import { messagesQueue } from "@/configs/bullmq";
 import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type {
   CreateRoute,
@@ -64,12 +66,13 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
 
   const created = await prisma.message.create({
     data: {
-      ...body,
-      // biome-ignore lint/suspicious/noExplicitAny: Prisma InputJsonValue casting
-      payload: body.payload as any,
+      eventTypeId: body.eventTypeId,
+      payload: body.payload as InputJsonValue,
       appUserId: params.id,
     },
   });
+
+  messagesQueue.add("messages", { message: created, session: jwt });
 
   const result = {
     ...created,
