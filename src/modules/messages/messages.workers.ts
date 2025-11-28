@@ -4,21 +4,25 @@ import { prisma } from "prisma";
 import { MESSAGE_QUEUE } from "@/configs/bullmq";
 import { redisClient } from "@/configs/redis";
 import { http } from "@/lib/xior";
+import { updateMessageStatus } from "./messages.services";
 
 console.log("Message worker started");
 
 type JobData = {
-  message: Message;
+  message: Message & { eventName: string };
   session: { id: string; name: string };
 };
 
-async function deliverMessage(message: Message, wh: Webhook) {
+async function deliverMessage(
+  message: Message & { eventName: string },
+  wh: Webhook
+) {
   try {
     const response = await http.request({
       method: "post",
       url: wh.url,
       data: {
-        event: message.eventTypeId,
+        event: message.eventName,
         data: message.payload,
       },
       headers: {
@@ -28,10 +32,7 @@ async function deliverMessage(message: Message, wh: Webhook) {
 
     return response.data;
   } catch (error) {
-    await prisma.message.update({
-      where: { id: message.id },
-      data: { status: "FAILED" },
-    });
+    console.log(error);
 
     throw new Error("Failed to deliver message", {
       cause: {
@@ -45,26 +46,26 @@ async function deliverMessage(message: Message, wh: Webhook) {
 const worker = new Worker<JobData>(
   MESSAGE_QUEUE,
   async (job) => {
+    // Update message status to processing
+    await updateMessageStatus(job.data.message.id, "PROCESSING");
+    console.log("message processing");
+
     const appUserId = job.data.message.appUserId;
-
-    console.log("inside worker");
-
     if (!appUserId) {
       throw new Error("AppUser not found");
     }
 
+    // Find webhooks for app user
     const webhooks = await prisma.webhook.findMany({
       where: {
         appUserId,
         eventTypes: { some: { eventTypeId: job.data.message.eventTypeId } },
+        disabled: false,
       },
     });
 
     if (webhooks.length === 0) {
-      await prisma.message.update({
-        where: { id: job.data.message.id },
-        data: { status: "SKIPPED" },
-      });
+      await updateMessageStatus(job.data.message.id, "SKIPPED");
       return;
     }
 
@@ -78,8 +79,10 @@ const worker = new Worker<JobData>(
 
     for (const r of res) {
       if (r.status === "fulfilled") {
-        console.log(r.value);
+        await updateMessageStatus(job.data.message.id, "DELIVERED");
       } else {
+        await updateMessageStatus(job.data.message.id, "FAILED");
+
         throw new Error("Failed to deliver message", {
           cause: {
             error: r.reason,
@@ -91,7 +94,11 @@ const worker = new Worker<JobData>(
 
     console.log(res);
   },
-  { connection: redisClient }
+  {
+    connection: redisClient,
+    removeOnFail: { count: 10 },
+    removeOnComplete: { count: 10 },
+  }
 );
 
 worker.on("completed", (job) => {

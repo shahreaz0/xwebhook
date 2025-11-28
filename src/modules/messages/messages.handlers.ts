@@ -72,7 +72,22 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
     },
   });
 
-  await messagesQueue.add("messages", { message: created, session: jwt });
+  const event = await prisma.eventType.findUnique({
+    where: { id: body.eventTypeId },
+    select: { name: true },
+  });
+
+  if (!event) {
+    throw new HTTPException(404, {
+      message: "Event Type not found",
+      cause: { success: false },
+    });
+  }
+
+  await messagesQueue.add("messages", {
+    message: { ...created, eventName: event.name },
+    session: jwt,
+  });
 
   const result = {
     ...created,

@@ -13,15 +13,23 @@ app.get("/", (c) =>
 app.post("/webhook", async (c) => {
   const secret = c.req.header("x-webhook-secret");
 
+  console.log("webhook fired ====================================");
+
+  console.log("secret", secret);
+
   if (secret !== "aabb") {
     return c.json("Unauthorized", 401);
   }
 
   const body = await c.req.json();
 
-  if (body.event === "employee.created") {
+  console.log("body", body);
+
+  if (body.event === "user.created") {
     console.log({ message: `email sent to ${body.data.name}` });
   }
+
+  return c.json({ message: "OK" });
 });
 
 export default {
