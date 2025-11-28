@@ -6,11 +6,13 @@ import { auth } from "./modules/auth/auth.index";
 import { eventTypes } from "./modules/event-types/event-types.index";
 import { index } from "./modules/index/index.routes";
 import { messages } from "./modules/messages/messages.index";
+import { users } from "./modules/users/users.index";
 import { webhooks } from "./modules/webhooks/webhooks.index";
 
 const routes = [
   index,
   auth,
+  users,
   applications,
   appUsers,
   eventTypes,

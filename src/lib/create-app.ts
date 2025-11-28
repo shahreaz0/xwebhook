@@ -25,6 +25,7 @@ export function createApp() {
   app.use(requestId());
   // app.use(logger())
 
+  app.use("/users/*", auth());
   app.use("/applications/*", auth());
   app.use("/app-users/*", auth());
   app.use("/event-types/*", auth());
