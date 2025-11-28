@@ -3,16 +3,12 @@ import { createErrorSchema } from "stoker/openapi/schemas";
 import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
 import {
   WebhookCreateSchema,
+  WebhookParamsSchema,
   WebhookSchema,
   WebhookUpdateSchema,
 } from "./webhooks.schemas";
 
 const tags = ["Webhooks"];
-
-// Params for /app-users/:id/webhooks/:webhookId
-const webhookParamsSchema = IdParamsSchema.extend({
-  webhookId: z.cuid2(),
-});
 
 export const list = createRoute({
   tags,
@@ -80,7 +76,7 @@ export const getOne = createRoute({
   summary: "Retrieve a webhook by ID for an app user",
   description:
     "Retrieve the details of a single webhook identified by webhookId for the specified app user.",
-  request: { params: webhookParamsSchema },
+  request: { params: WebhookParamsSchema },
   responses: {
     200: {
       description: "OK — webhook returned successfully.",
@@ -96,7 +92,7 @@ export const getOne = createRoute({
     422: {
       description: "Unprocessable Entity — invalid path parameter (webhookId).",
       content: {
-        "application/json": { schema: createErrorSchema(webhookParamsSchema) },
+        "application/json": { schema: createErrorSchema(WebhookParamsSchema) },
       },
     },
     404: {
@@ -114,7 +110,7 @@ export const patch = createRoute({
   description:
     "Partially update an existing webhook identified by webhookId for the specified app user.",
   request: {
-    params: webhookParamsSchema,
+    params: WebhookParamsSchema,
     body: {
       description: "Partial fields to update",
       content: { "application/json": { schema: WebhookUpdateSchema } },
@@ -138,7 +134,7 @@ export const patch = createRoute({
         "application/json": {
           schema: z.union([
             createErrorSchema(WebhookUpdateSchema),
-            createErrorSchema(webhookParamsSchema),
+            createErrorSchema(WebhookParamsSchema),
           ]),
         },
       },
@@ -158,7 +154,7 @@ export const remove = createRoute({
   summary: "Delete a webhook for an app user",
   description:
     "Delete the webhook identified by webhookId for the specified app user.",
-  request: { params: webhookParamsSchema },
+  request: { params: WebhookParamsSchema },
   responses: {
     200: {
       description: "OK — webhook deleted successfully.",
@@ -175,7 +171,7 @@ export const remove = createRoute({
       description:
         "Unprocessable Entity — invalid path parameters (webhookId).",
       content: {
-        "application/json": { schema: createErrorSchema(webhookParamsSchema) },
+        "application/json": { schema: createErrorSchema(WebhookParamsSchema) },
       },
     },
     404: {

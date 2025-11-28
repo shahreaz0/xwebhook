@@ -1,19 +1,20 @@
 import type { RouteHandler } from "@hono/zod-openapi";
+import type { InputJsonValue } from "generated/prisma/internal/prismaNamespace";
 import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { z } from "zod";
+import { messagesQueue } from "@/configs/bullmq";
 import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type {
   CreateRoute,
   GetOneRoute,
   ListRoute,
   PatchRoute,
-  RemoveRoute,
-} from "./webhooks.routes";
-import { WebhookSchema } from "./webhooks.schemas";
+} from "./messages.routes";
+import { MessageSchema } from "./messages.schemas";
 
 // ----------------------------
-// List Webhooks for AppUser
+// List Messages for AppUser
 // ----------------------------
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const jwt = c.get("jwtPayload");
@@ -29,23 +30,22 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       cause: { success: false },
     });
   }
-  const webhooks = await prisma.webhook.findMany({
+  const messages = await prisma.message.findMany({
     where: { appUserId: params.id },
-    include: { eventTypes: true },
   });
-  const data = webhooks.map((w) => ({
-    ...w,
-    eventTypes: w.eventTypes ?? [],
-    appUserId: w.appUserId === null ? undefined : w.appUserId,
-    createdAt: w.createdAt.toISOString(),
-    updatedAt: w.updatedAt.toISOString(),
+  const data = messages.map((m) => ({
+    ...m,
+    appUserId: m.appUserId === null ? undefined : m.appUserId,
+    deliverAt: m.deliverAt ? m.deliverAt.toISOString() : null,
+    createdAt: m.createdAt.toISOString(),
+    payload: m.payload as Record<string, unknown>,
   }));
-  const parsed = z.array(WebhookSchema).parse(data);
+  const parsed = z.array(MessageSchema).parse(data);
   return c.json({ success: true, data: parsed });
 };
 
 // ----------------------------
-// Create Webhook for AppUser
+// Create Message for AppUser
 // ----------------------------
 export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
   const jwt = c.get("jwtPayload");
@@ -64,33 +64,46 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
     });
   }
 
-  const { eventTypes, ...rest } = body;
-
-  const created = await prisma.webhook.create({
+  const created = await prisma.message.create({
     data: {
-      ...rest,
+      eventTypeId: body.eventTypeId,
+      payload: body.payload as InputJsonValue,
       appUserId: params.id,
-      eventTypes: {
-        create: eventTypes.map((id) => ({ eventTypeId: id })),
-      },
     },
+  });
 
-    include: { eventTypes: true },
+  const event = await prisma.eventType.findUnique({
+    where: { id: body.eventTypeId },
+    select: { name: true },
+  });
+
+  if (!event) {
+    throw new HTTPException(404, {
+      message: "Event Type not found",
+      cause: { success: false },
+    });
+  }
+
+  await messagesQueue.add("messages", {
+    message: { ...created, eventName: event.name },
+    session: jwt,
   });
 
   const result = {
     ...created,
-    eventTypes: created.eventTypes.map((et) => et.eventTypeId),
     appUserId: created.appUserId === null ? undefined : created.appUserId,
+    deliverAt: created.deliverAt ? created.deliverAt.toISOString() : null,
+    createdAt: created.createdAt.toISOString(),
+    payload: created.payload as Record<string, unknown>,
   };
 
-  const parsed = WebhookSchema.parse(result);
+  const parsed = MessageSchema.parse(result);
 
   return c.json({ success: true, data: parsed }, 201);
 };
 
 // ----------------------------
-// Get One Webhook for AppUser
+// Get One Message for AppUser
 // ----------------------------
 export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
   const jwt = c.get("jwtPayload");
@@ -106,29 +119,28 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
       cause: { success: false },
     });
   }
-  const webhook = await prisma.webhook.findFirst({
-    where: { appUserId: params.id, id: params.webhookId },
-    include: { eventTypes: true },
+  const message = await prisma.message.findFirst({
+    where: { appUserId: params.id, id: params.messageId },
   });
-  if (!webhook) {
+  if (!message) {
     throw new HTTPException(404, {
-      message: "Webhook not found",
+      message: "Message not found",
       cause: { success: false },
     });
   }
   const result = {
-    ...webhook,
-    eventTypes: webhook.eventTypes ?? [],
-    appUserId: webhook.appUserId === null ? undefined : webhook.appUserId,
-    createdAt: webhook.createdAt.toISOString(),
-    updatedAt: webhook.updatedAt.toISOString(),
+    ...message,
+    appUserId: message.appUserId === null ? undefined : message.appUserId,
+    deliverAt: message.deliverAt ? message.deliverAt.toISOString() : null,
+    createdAt: message.createdAt.toISOString(),
+    payload: message.payload as Record<string, unknown>,
   };
-  const parsed = WebhookSchema.parse(result);
+  const parsed = MessageSchema.parse(result);
   return c.json({ success: true, data: parsed }, 200);
 };
 
 // ----------------------------
-// Update Webhook for AppUser
+// Update Message for AppUser
 // ----------------------------
 export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
   const jwt = c.get("jwtPayload");
@@ -147,79 +159,35 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
     });
   }
 
-  const webhook = await prisma.webhook.findFirst({
-    where: { appUserId: params.id, id: params.webhookId },
-    include: { eventTypes: true },
+  const message = await prisma.message.findFirst({
+    where: { appUserId: params.id, id: params.messageId },
   });
 
-  if (!webhook) {
+  if (!message) {
     throw new HTTPException(404, {
-      message: "Webhook not found",
+      message: "Message not found",
       cause: { success: false },
     });
   }
 
-  const { eventTypes: updateEventTypes, ...updateRest } = body;
-
-  const updateData: Record<string, unknown> = { ...updateRest };
-
-  if (params.id !== undefined) {
-    updateData.appUserId = params.id;
-  }
-
-  if (updateEventTypes) {
-    updateData.eventTypes = {
-      create: updateEventTypes.map((id) => ({ eventTypeId: id })),
-    };
-  }
-  const edited = await prisma.webhook.update({
-    where: { id: params.webhookId },
-    data: updateData,
-    include: { eventTypes: true },
+  const edited = await prisma.message.update({
+    where: { id: params.messageId },
+    data: {
+      ...body,
+      // biome-ignore lint/suspicious/noExplicitAny: Prisma InputJsonValue casting
+      payload: body.payload ? (body.payload as any) : undefined,
+    },
   });
 
   const result = {
     ...edited,
-    eventTypes: edited.eventTypes ?? [],
     appUserId: edited.appUserId === null ? undefined : edited.appUserId,
+    deliverAt: edited.deliverAt ? edited.deliverAt.toISOString() : null,
+    createdAt: edited.createdAt.toISOString(),
+    payload: edited.payload as Record<string, unknown>,
   };
 
-  const parsed = WebhookSchema.parse(result);
+  const parsed = MessageSchema.parse(result);
 
   return c.json({ success: true, data: parsed }, 200);
-};
-
-// ----------------------------
-// Delete Webhook for AppUser
-// ----------------------------
-export const remove: RouteHandler<RemoveRoute, AppBindings> = async (c) => {
-  const jwt = c.get("jwtPayload");
-  const params = c.req.valid("param");
-
-  const appUser = await prisma.appUser.findUnique({
-    where: { id: params.id },
-    include: { application: true },
-  });
-
-  if (!appUser || appUser.application.userId !== jwt.id) {
-    throw new HTTPException(404, {
-      message: "AppUser not found",
-      cause: { success: false },
-    });
-  }
-
-  const webhook = await prisma.webhook.findFirst({
-    where: { appUserId: params.id, id: params.webhookId },
-  });
-
-  if (!webhook) {
-    throw new HTTPException(404, {
-      message: "Webhook not found",
-      cause: { success: false },
-    });
-  }
-
-  await prisma.webhook.delete({ where: { id: params.webhookId } });
-
-  return c.json({ success: true, data: { id: params.webhookId } }, 200);
 };

@@ -25,9 +25,12 @@ export function createApp() {
   app.use(requestId());
   // app.use(logger())
 
+  app.use("/users/*", auth());
   app.use("/applications/*", auth());
   app.use("/app-users/*", auth());
   app.use("/event-types/*", auth());
+  app.use("/messages/*", auth());
+  app.use("/webhooks/*", auth());
 
   app.notFound(notFound);
   app.onError(onError);
