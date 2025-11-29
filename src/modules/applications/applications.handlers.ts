@@ -1,7 +1,9 @@
 import type { RouteHandler } from "@hono/zod-openapi";
+import type { Prisma } from "generated/prisma/client";
 import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { z } from "zod";
+import { buildOrderBy, buildPagination } from "@/lib/common-schemas";
 import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type {
   CreateRoute,
@@ -17,9 +19,29 @@ import { ApplicationSchema } from "./applications.schemas";
 // ----------------------------
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const jwtPayload = c.get("jwtPayload");
+  const query = c.req.valid("query");
+
+  // Build where clause
+  const where: Prisma.ApplicationWhereInput = {
+    userId: jwtPayload.id,
+  };
+
+  if (query.search) {
+    where.name = { contains: query.search, mode: "insensitive" };
+  }
+
+  // Build orderBy and pagination
+  const orderBy = buildOrderBy(
+    query.sortBy || "createdAt",
+    query.order || "desc"
+  );
+
+  const pagination = buildPagination(query.limit, query.offset);
 
   const applications = await prisma.application.findMany({
-    where: { userId: jwtPayload.id },
+    where,
+    orderBy,
+    ...pagination,
   });
 
   const parsedApps = z.array(ApplicationSchema).parse(applications);

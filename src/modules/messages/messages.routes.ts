@@ -1,9 +1,10 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { NotFoundSchema } from "@/lib/schema-contants";
+import { NotFoundSchema } from "@/lib/common-schemas";
 import {
   AppUserParamsSchema,
   MessageCreateSchema,
+  MessageListQuerySchema,
   MessageParamsSchema,
   MessageSchema,
   MessageUpdateSchema,
@@ -17,7 +18,10 @@ export const list = createRoute({
   path: "/app-users/{appUserId}/messages",
   summary: "List app user messages",
   description: "Retrieve a list of messages for the specified app user.",
-  request: { params: AppUserParamsSchema },
+  request: {
+    params: AppUserParamsSchema,
+    query: MessageListQuerySchema,
+  },
   responses: {
     200: {
       description: "OK — list returned successfully.",

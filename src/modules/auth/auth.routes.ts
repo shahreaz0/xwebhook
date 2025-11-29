@@ -1,6 +1,6 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { createHttpErrorSchema } from "@/lib/schema-contants";
+import { createHttpErrorSchema } from "@/lib/common-schemas";
 import { AuthUserSchema, LoginSchema, RegisterSchema } from "./auth.schemas";
 
 const tags = ["Auth"];

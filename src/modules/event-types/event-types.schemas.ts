@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  createSortBySchema,
+  PaginationQuerySchema,
+  SortOrderSchema,
+} from "@/lib/common-schemas";
 
 export const EventTypeSchema = z.object({
   id: z.cuid2().openapi({ example: "ckz1234560000abcdef12345" }),
@@ -44,4 +49,43 @@ export const EventTypeParamsSchema = ApplicationParamsSchema.extend({
   eventTypeId: z
     .string()
     .openapi({ param: { name: "eventTypeId", in: "path", required: true } }),
+});
+
+export const EventTypeListQuerySchema = PaginationQuerySchema.extend({
+  // Sorting
+  sortBy: createSortBySchema(["name", "createdAt", "updatedAt"], "createdAt"),
+  order: SortOrderSchema,
+  // Filtering
+  archived: z.coerce
+    .boolean()
+    .optional()
+    .openapi({
+      param: { name: "archived", in: "query" },
+      example: false,
+      description: "Filter by archived status",
+    }),
+  deprecated: z.coerce
+    .boolean()
+    .optional()
+    .openapi({
+      param: { name: "deprecated", in: "query" },
+      example: false,
+      description: "Filter by deprecated status",
+    }),
+  groupName: z
+    .string()
+    .optional()
+    .openapi({
+      param: { name: "groupName", in: "query" },
+      example: "user",
+      description: "Filter by group name",
+    }),
+  search: z
+    .string()
+    .optional()
+    .openapi({
+      param: { name: "search", in: "query" },
+      example: "user.created",
+      description: "Search by event type name (case-insensitive)",
+    }),
 });

@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  createSortBySchema,
+  PaginationQuerySchema,
+  SortOrderSchema,
+} from "@/lib/common-schemas";
 
 export const WebhookSchema = z.object({
   id: z.cuid2().openapi({ example: "ckwxyz123456abcdef12345" }),
@@ -39,4 +44,27 @@ export const WebhookParamsSchema = AppUserParamsSchema.extend({
   webhookId: z
     .string()
     .openapi({ param: { name: "webhookId", in: "path", required: true } }),
+});
+
+export const WebhookListQuerySchema = PaginationQuerySchema.extend({
+  // Sorting
+  sortBy: createSortBySchema(["createdAt", "url", "updatedAt"], "createdAt"),
+  order: SortOrderSchema,
+  // Filtering
+  disabled: z.coerce
+    .boolean()
+    .optional()
+    .openapi({
+      param: { name: "disabled", in: "query" },
+      example: false,
+      description: "Filter by disabled status",
+    }),
+  eventTypeId: z
+    .cuid2()
+    .optional()
+    .openapi({
+      param: { name: "eventTypeId", in: "query" },
+      example: "cm3...",
+      description: "Filter webhooks subscribed to this event type",
+    }),
 });

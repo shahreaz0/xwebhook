@@ -1,9 +1,10 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { NotFoundSchema } from "@/lib/schema-contants";
+import { NotFoundSchema } from "@/lib/common-schemas";
 import {
   AppUserParamsSchema,
   WebhookCreateSchema,
+  WebhookListQuerySchema,
   WebhookParamsSchema,
   WebhookSchema,
   WebhookUpdateSchema,
@@ -17,7 +18,10 @@ export const list = createRoute({
   path: "/app-users/{appUserId}/webhooks",
   summary: "List app user webhooks",
   description: "Retrieve a list of webhooks for the specified app user.",
-  request: { params: AppUserParamsSchema },
+  request: {
+    params: AppUserParamsSchema,
+    query: WebhookListQuerySchema,
+  },
   responses: {
     200: {
       description: "OK — list returned successfully.",

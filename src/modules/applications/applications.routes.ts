@@ -1,8 +1,9 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
+import { IdParamsSchema, NotFoundSchema } from "@/lib/common-schemas";
 import {
   ApplicationCreateSchema,
+  ApplicationListQuerySchema,
   ApplicationSchema,
   ApplicationUpdateSchema,
 } from "./applications.schemas";
@@ -19,6 +20,9 @@ export const list = createRoute({
   summary: "List applications",
   description:
     "Retrieve a list of applications belonging to the authenticated user. Supports paging and filtering (if provided by query parameters).",
+  request: {
+    query: ApplicationListQuerySchema,
+  },
   responses: {
     200: {
       description:
