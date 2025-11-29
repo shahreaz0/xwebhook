@@ -1,7 +1,8 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
+import { NotFoundSchema } from "@/lib/schema-contants";
 import {
+  AppUserParamsSchema,
   WebhookCreateSchema,
   WebhookParamsSchema,
   WebhookSchema,
@@ -13,10 +14,10 @@ const tags = ["Webhooks"];
 export const list = createRoute({
   tags,
   method: "get",
-  path: "/app-users/{id}/webhooks",
-  summary: "List webhooks for an app user",
+  path: "/app-users/{appUserId}/webhooks",
+  summary: "List app user webhooks",
   description: "Retrieve a list of webhooks for the specified app user.",
-  request: { params: IdParamsSchema },
+  request: { params: AppUserParamsSchema },
   responses: {
     200: {
       description: "OK — list returned successfully.",
@@ -35,11 +36,11 @@ export const list = createRoute({
 export const create = createRoute({
   tags,
   method: "post",
-  path: "/app-users/{id}/webhooks",
-  summary: "Create a new webhook for an app user",
+  path: "/app-users/{appUserId}/webhooks",
+  summary: "Create app user webhook",
   description: "Create a new webhook for the specified app user.",
   request: {
-    params: IdParamsSchema,
+    params: AppUserParamsSchema,
     body: {
       description: "The webhook to create",
       content: {
@@ -72,8 +73,8 @@ export const create = createRoute({
 export const getOne = createRoute({
   tags,
   method: "get",
-  path: "/app-users/{id}/webhooks/{webhookId}",
-  summary: "Retrieve a webhook by ID for an app user",
+  path: "/app-users/{appUserId}/webhooks/{webhookId}",
+  summary: "Get app user webhook",
   description:
     "Retrieve the details of a single webhook identified by webhookId for the specified app user.",
   request: { params: WebhookParamsSchema },
@@ -105,8 +106,8 @@ export const getOne = createRoute({
 export const patch = createRoute({
   tags,
   method: "patch",
-  path: "/app-users/{id}/webhooks/{webhookId}",
-  summary: "Update a webhook for an app user",
+  path: "/app-users/{appUserId}/webhooks/{webhookId}",
+  summary: "Update app user webhook",
   description:
     "Partially update an existing webhook identified by webhookId for the specified app user.",
   request: {
@@ -150,8 +151,8 @@ export const patch = createRoute({
 export const remove = createRoute({
   tags,
   method: "delete",
-  path: "/app-users/{id}/webhooks/{webhookId}",
-  summary: "Delete a webhook for an app user",
+  path: "/app-users/{appUserId}/webhooks/{webhookId}",
+  summary: "Delete app user webhook",
   description:
     "Delete the webhook identified by webhookId for the specified app user.",
   request: { params: WebhookParamsSchema },

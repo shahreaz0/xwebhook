@@ -20,7 +20,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
   const params = c.req.valid("param");
   // Ensure the app user exists and its application belongs to the authenticated user
   const appUser = await prisma.appUser.findUnique({
-    where: { id: params.id },
+    where: { id: params.appUserId },
     include: { application: true },
   });
   if (!appUser || appUser.application.userId !== jwt.id) {
@@ -30,7 +30,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
     });
   }
   const webhooks = await prisma.webhook.findMany({
-    where: { appUserId: params.id },
+    where: { appUserId: params.appUserId },
     include: { eventTypes: true },
   });
   const data = webhooks.map((w) => ({
@@ -53,7 +53,7 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
   const body = c.req.valid("json");
 
   const appUser = await prisma.appUser.findUnique({
-    where: { id: params.id },
+    where: { id: params.appUserId },
     include: { application: true },
   });
 
@@ -80,7 +80,7 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
   const created = await prisma.webhook.create({
     data: {
       ...rest,
-      appUserId: params.id,
+      appUserId: params.appUserId,
       eventTypes: {
         create: events.map((et) => ({ eventTypeId: et.id })),
       },
@@ -108,7 +108,7 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
   const params = c.req.valid("param");
   // Ensure the app user exists and belongs to the authenticated user
   const appUser = await prisma.appUser.findUnique({
-    where: { id: params.id },
+    where: { id: params.appUserId },
     include: { application: true },
   });
   if (!appUser || appUser.application.userId !== jwt.id) {
@@ -118,7 +118,7 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
     });
   }
   const webhook = await prisma.webhook.findFirst({
-    where: { appUserId: params.id, id: params.webhookId },
+    where: { appUserId: params.appUserId, id: params.webhookId },
     include: { eventTypes: true },
   });
   if (!webhook) {
@@ -147,7 +147,7 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
   const body = c.req.valid("json");
 
   const appUser = await prisma.appUser.findUnique({
-    where: { id: params.id },
+    where: { id: params.appUserId },
     include: { application: true },
   });
 
@@ -159,7 +159,7 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
   }
 
   const webhook = await prisma.webhook.findFirst({
-    where: { appUserId: params.id, id: params.webhookId },
+    where: { appUserId: params.appUserId, id: params.webhookId },
     include: { eventTypes: true },
   });
 
@@ -174,8 +174,8 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
 
   const updateData: Record<string, unknown> = { ...updateRest };
 
-  if (params.id !== undefined) {
-    updateData.appUserId = params.id;
+  if (params.appUserId !== undefined) {
+    updateData.appUserId = params.appUserId;
   }
 
   if (updateEventTypes) {
@@ -208,7 +208,7 @@ export const remove: RouteHandler<RemoveRoute, AppBindings> = async (c) => {
   const params = c.req.valid("param");
 
   const appUser = await prisma.appUser.findUnique({
-    where: { id: params.id },
+    where: { id: params.appUserId },
     include: { application: true },
   });
 
@@ -220,7 +220,7 @@ export const remove: RouteHandler<RemoveRoute, AppBindings> = async (c) => {
   }
 
   const webhook = await prisma.webhook.findFirst({
-    where: { appUserId: params.id, id: params.webhookId },
+    where: { appUserId: params.appUserId, id: params.webhookId },
   });
 
   if (!webhook) {
