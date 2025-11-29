@@ -64,6 +64,18 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
     });
   }
 
+  const eventType = await prisma.eventType.findUnique({
+    where: { id: body.eventTypeId, archived: false },
+    select: { name: true },
+  });
+
+  if (!eventType) {
+    throw new HTTPException(404, {
+      message: "Event Type not found or archived",
+      cause: { success: false },
+    });
+  }
+
   const created = await prisma.message.create({
     data: {
       eventTypeId: body.eventTypeId,
@@ -72,20 +84,8 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
     },
   });
 
-  const event = await prisma.eventType.findUnique({
-    where: { id: body.eventTypeId },
-    select: { name: true },
-  });
-
-  if (!event) {
-    throw new HTTPException(404, {
-      message: "Event Type not found",
-      cause: { success: false },
-    });
-  }
-
   await messagesQueue.add("messages", {
-    message: { ...created, eventName: event.name },
+    message: { ...created, eventName: eventType.name },
     session: jwt,
   });
 

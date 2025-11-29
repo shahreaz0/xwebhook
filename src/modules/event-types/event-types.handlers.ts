@@ -67,7 +67,6 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
     data: {
       ...body,
       applicationId: params.id,
-      orgId: jwtPayload.id,
     },
   });
 

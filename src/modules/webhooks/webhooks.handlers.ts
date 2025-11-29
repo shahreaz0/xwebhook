@@ -66,12 +66,23 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
 
   const { eventTypes, ...rest } = body;
 
+  const events = await prisma.eventType.findMany({
+    where: { id: { in: eventTypes }, archived: false },
+  });
+
+  if (events.length !== eventTypes.length) {
+    throw new HTTPException(404, {
+      message: "EventTypes not found or archived",
+      cause: { success: false },
+    });
+  }
+
   const created = await prisma.webhook.create({
     data: {
       ...rest,
       appUserId: params.id,
       eventTypes: {
-        create: eventTypes.map((id) => ({ eventTypeId: id })),
+        create: events.map((et) => ({ eventTypeId: et.id })),
       },
     },
 

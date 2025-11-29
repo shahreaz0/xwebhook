@@ -100,7 +100,6 @@ model Webhook {
   disabled    Boolean  @default(false)
   metadata    Json?
   rateLimit   Int?
-  // eventId     String
   appUser     AppUser? @relation(fields: [appUserId], references: [id])
   appUserId   String?
 
@@ -117,20 +116,22 @@ model Webhook {
 
 model EventType {
   id            String      @id @default(cuid(2))
-  orgId         String
   name          String
-  description   String
+  description   String?
   applicationId String
   application   Application @relation(fields: [applicationId], references: [id])
 
   messages           Message[]
   webhookConnections WebhookEventType[]
 
+  archived   Boolean @default(false)
+  deprecated Boolean @default(false)
+  groupName  String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([applicationId, name])
-  @@index([orgId])
   @@index([applicationId])
 }
 
