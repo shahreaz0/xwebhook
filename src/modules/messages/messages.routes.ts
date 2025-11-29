@@ -1,7 +1,8 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
+import { NotFoundSchema } from "@/lib/schema-contants";
 import {
+  AppUserParamsSchema,
   MessageCreateSchema,
   MessageParamsSchema,
   MessageSchema,
@@ -13,10 +14,10 @@ const tags = ["Messages"];
 export const list = createRoute({
   tags,
   method: "get",
-  path: "/app-users/{id}/messages",
-  summary: "List messages for an app user",
+  path: "/app-users/{appUserId}/messages",
+  summary: "List app user messages",
   description: "Retrieve a list of messages for the specified app user.",
-  request: { params: IdParamsSchema },
+  request: { params: AppUserParamsSchema },
   responses: {
     200: {
       description: "OK — list returned successfully.",
@@ -35,11 +36,11 @@ export const list = createRoute({
 export const create = createRoute({
   tags,
   method: "post",
-  path: "/app-users/{id}/messages",
-  summary: "Create a new message for an app user",
+  path: "/app-users/{appUserId}/messages",
+  summary: "Create app user message",
   description: "Create a new message for the specified app user.",
   request: {
-    params: IdParamsSchema,
+    params: AppUserParamsSchema,
     body: {
       description: "The message to create",
       content: {
@@ -72,8 +73,8 @@ export const create = createRoute({
 export const getOne = createRoute({
   tags,
   method: "get",
-  path: "/app-users/{id}/messages/{messageId}",
-  summary: "Retrieve a message by ID for an app user",
+  path: "/app-users/{appUserId}/messages/{messageId}",
+  summary: "Get app user message",
   description:
     "Retrieve the details of a single message identified by messageId for the specified app user.",
   request: { params: MessageParamsSchema },
@@ -105,8 +106,8 @@ export const getOne = createRoute({
 export const patch = createRoute({
   tags,
   method: "patch",
-  path: "/app-users/{id}/messages/{messageId}",
-  summary: "Update a message for an app user",
+  path: "/app-users/{appUserId}/messages/{messageId}",
+  summary: "Update app user message",
   description:
     "Partially update an existing message identified by messageId for the specified app user.",
   request: {

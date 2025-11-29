@@ -21,7 +21,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
   const params = c.req.valid("param");
   // Ensure the app user exists and its application belongs to the authenticated user
   const appUser = await prisma.appUser.findUnique({
-    where: { id: params.id },
+    where: { id: params.appUserId },
     include: { application: true },
   });
   if (!appUser || appUser.application.userId !== jwt.id) {
@@ -31,7 +31,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
     });
   }
   const messages = await prisma.message.findMany({
-    where: { appUserId: params.id },
+    where: { appUserId: params.appUserId },
   });
   const data = messages.map((m) => ({
     ...m,
@@ -53,7 +53,7 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
   const body = c.req.valid("json");
 
   const appUser = await prisma.appUser.findUnique({
-    where: { id: params.id },
+    where: { id: params.appUserId },
     include: { application: true },
   });
 
@@ -80,7 +80,7 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
     data: {
       eventTypeId: body.eventTypeId,
       payload: body.payload as InputJsonValue,
-      appUserId: params.id,
+      appUserId: params.appUserId,
     },
   });
 
@@ -110,7 +110,7 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
   const params = c.req.valid("param");
   // Ensure the app user exists and belongs to the authenticated user
   const appUser = await prisma.appUser.findUnique({
-    where: { id: params.id },
+    where: { id: params.appUserId },
     include: { application: true },
   });
   if (!appUser || appUser.application.userId !== jwt.id) {
@@ -120,7 +120,7 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
     });
   }
   const message = await prisma.message.findFirst({
-    where: { appUserId: params.id, id: params.messageId },
+    where: { appUserId: params.appUserId, id: params.messageId },
   });
   if (!message) {
     throw new HTTPException(404, {
@@ -148,7 +148,7 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
   const body = c.req.valid("json");
 
   const appUser = await prisma.appUser.findUnique({
-    where: { id: params.id },
+    where: { id: params.appUserId },
     include: { application: true },
   });
 
@@ -160,7 +160,7 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
   }
 
   const message = await prisma.message.findFirst({
-    where: { appUserId: params.id, id: params.messageId },
+    where: { appUserId: params.appUserId, id: params.messageId },
   });
 
   if (!message) {

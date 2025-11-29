@@ -36,7 +36,14 @@ export const MessageUpdateSchema = z.object({
   deliverAt: z.string().nullable().optional(),
 });
 
-export const MessageParamsSchema = z.object({
-  id: z.cuid2().openapi({ param: { name: "id", in: "path" } }),
-  messageId: z.cuid2().openapi({ param: { name: "messageId", in: "path" } }),
+export const AppUserParamsSchema = z.object({
+  appUserId: z
+    .cuid2()
+    .openapi({ param: { name: "appUserId", in: "path", required: true } }),
+});
+
+export const MessageParamsSchema = AppUserParamsSchema.extend({
+  messageId: z
+    .cuid2()
+    .openapi({ param: { name: "messageId", in: "path", required: true } }),
 });
