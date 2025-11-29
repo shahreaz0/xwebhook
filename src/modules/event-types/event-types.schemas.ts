@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { IdParamsSchema } from "@/lib/schema-contants";
 
 export const EventTypeSchema = z.object({
   id: z.cuid2().openapi({ example: "ckz1234560000abcdef12345" }),
@@ -35,6 +34,14 @@ export const EventTypeUpdateSchema = EventTypeCreateSchema.extend({
   deprecated: z.boolean(),
 }).partial();
 
-export const EventTypeParamsSchema = IdParamsSchema.extend({
-  eventTypeId: z.cuid2(),
+export const ApplicationParamsSchema = z.object({
+  applicationId: z
+    .string()
+    .openapi({ param: { name: "applicationId", in: "path", required: true } }),
+});
+
+export const EventTypeParamsSchema = ApplicationParamsSchema.extend({
+  eventTypeId: z
+    .string()
+    .openapi({ param: { name: "eventTypeId", in: "path", required: true } }),
 });

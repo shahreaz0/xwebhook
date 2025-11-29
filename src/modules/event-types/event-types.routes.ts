@@ -1,7 +1,8 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
+import { NotFoundSchema } from "@/lib/schema-contants";
 import {
+  ApplicationParamsSchema,
   EventTypeCreateSchema,
   EventTypeParamsSchema,
   EventTypeSchema,
@@ -16,12 +17,12 @@ const tags = ["Event Types"];
 export const list = createRoute({
   tags,
   method: "get",
-  path: "/applications/{id}/event-types",
+  path: "/applications/{applicationId}/event-types",
   summary: "List event types",
   description:
     "Retrieve a list of event types for the specified application. Supports paging and filtering (if provided by query parameters).",
   request: {
-    params: IdParamsSchema,
+    params: ApplicationParamsSchema,
   },
   responses: {
     200: {
@@ -45,12 +46,12 @@ export const list = createRoute({
 export const create = createRoute({
   tags,
   method: "post",
-  path: "/applications/{id}/event-types",
-  summary: "Create a new event type",
+  path: "/applications/{applicationId}/event-types",
+  summary: "Create event type",
   description:
     "Create a new event type for the specified application. Provide the name and description. Returns the created event type record.",
   request: {
-    params: IdParamsSchema,
+    params: ApplicationParamsSchema,
     body: {
       description: "The event type to create",
       content: {
@@ -90,8 +91,8 @@ export const create = createRoute({
 export const getOne = createRoute({
   tags,
   method: "get",
-  path: "/applications/{id}/event-types/{eventTypeId}",
-  summary: "Retrieve an event type by ID",
+  path: "/applications/{applicationId}/event-types/{eventTypeId}",
+  summary: "Get event type",
   description:
     "Retrieve the details of a single event type identified by {eventTypeId} for the specified application.",
   request: {
@@ -135,7 +136,7 @@ export const getOne = createRoute({
 export const patch = createRoute({
   tags,
   method: "patch",
-  path: "/applications/{id}/event-types/{eventTypeId}",
+  path: "/applications/{applicationId}/event-types/{eventTypeId}",
   summary: "Update event type",
   description:
     "Partially update an existing event type identified by {eventTypeId} for the specified application. Only provided fields will be changed. Returns the updated event type.",
@@ -193,7 +194,7 @@ export const patch = createRoute({
 export const remove = createRoute({
   tags,
   method: "delete",
-  path: "/applications/{id}/event-types/{eventTypeId}",
+  path: "/applications/{applicationId}/event-types/{eventTypeId}",
   summary: "Delete event type",
   description:
     "Delete the event type identified by {eventTypeId} for the specified application. This operation permanently removes the event type.",

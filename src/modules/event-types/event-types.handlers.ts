@@ -21,7 +21,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 
   // Verify application ownership
   const application = await prisma.application.findUnique({
-    where: { id: params.id },
+    where: { id: params.applicationId },
   });
 
   if (!application || application.userId !== jwtPayload.id) {
@@ -32,7 +32,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
   }
 
   const eventTypes = await prisma.eventType.findMany({
-    where: { applicationId: params.id },
+    where: { applicationId: params.applicationId },
   });
 
   const parsedEventTypes = z.array(EventTypeSchema).parse(eventTypes);
@@ -53,7 +53,7 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
 
   // Verify application ownership
   const application = await prisma.application.findUnique({
-    where: { id: params.id },
+    where: { id: params.applicationId },
   });
 
   if (!application || application.userId !== jwtPayload.id) {
@@ -66,7 +66,7 @@ export const create: RouteHandler<CreateRoute, AppBindings> = async (c) => {
   const createdEventType = await prisma.eventType.create({
     data: {
       ...body,
-      applicationId: params.id,
+      applicationId: params.applicationId,
     },
   });
 
@@ -82,7 +82,7 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
 
   // Verify application ownership
   const application = await prisma.application.findUnique({
-    where: { id: params.id },
+    where: { id: params.applicationId },
   });
 
   if (!application || application.userId !== jwtPayload.id) {
@@ -93,7 +93,7 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
   }
 
   const eventType = await prisma.eventType.findFirst({
-    where: { id: params.eventTypeId, applicationId: params.id },
+    where: { id: params.eventTypeId, applicationId: params.applicationId },
   });
 
   if (!eventType) {
@@ -116,7 +116,7 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
 
   // Verify application ownership
   const application = await prisma.application.findUnique({
-    where: { id: params.id },
+    where: { id: params.applicationId },
   });
 
   if (!application || application.userId !== jwtPayload.id) {
@@ -127,7 +127,7 @@ export const patch: RouteHandler<PatchRoute, AppBindings> = async (c) => {
   }
 
   const eventType = await prisma.eventType.findFirst({
-    where: { id: params.eventTypeId, applicationId: params.id },
+    where: { id: params.eventTypeId, applicationId: params.applicationId },
   });
 
   if (!eventType) {
@@ -154,7 +154,7 @@ export const remove: RouteHandler<RemoveRoute, AppBindings> = async (c) => {
 
   // Verify application ownership
   const application = await prisma.application.findUnique({
-    where: { id: params.id },
+    where: { id: params.applicationId },
   });
 
   if (!application || application.userId !== jwtPayload.id) {
@@ -165,7 +165,7 @@ export const remove: RouteHandler<RemoveRoute, AppBindings> = async (c) => {
   }
 
   const eventType = await prisma.eventType.findFirst({
-    where: { id: params.eventTypeId, applicationId: params.id },
+    where: { id: params.eventTypeId, applicationId: params.applicationId },
   });
 
   if (!eventType) {
