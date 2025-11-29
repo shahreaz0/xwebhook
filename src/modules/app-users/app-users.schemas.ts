@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { IdParamsSchema } from "@/lib/schema-contants";
 
 export const AppUserSchema = z.object({
   id: z.cuid2().openapi({ example: "ckz1234560000abcdef12345" }),
@@ -20,6 +19,10 @@ export const AppUserCreateSchema = AppUserSchema.omit({
 
 export const AppUserUpdateSchema = AppUserCreateSchema.partial();
 
-export const AppUserParamsSchema = IdParamsSchema.extend({
-  userId: z.cuid2(),
+export const ApplicationIdParamsSchema = z.object({
+  applicationId: z.cuid2(),
+});
+
+export const AppUserParamsSchema = ApplicationIdParamsSchema.extend({
+  appUserId: z.cuid2(),
 });

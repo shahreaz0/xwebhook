@@ -1,7 +1,8 @@
 import { createRoute } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { IdParamsSchema, NotFoundSchema } from "@/lib/schema-contants";
+import { NotFoundSchema } from "@/lib/schema-contants";
 import {
+  ApplicationIdParamsSchema,
   AppUserCreateSchema,
   AppUserParamsSchema,
   AppUserSchema,
@@ -15,11 +16,11 @@ import { z } from "zod";
 export const list = createRoute({
   tags,
   method: "get",
-  path: "/applications/{id}/app-users",
-  summary: "List application users for an application",
+  path: "/applications/{applicationId}/app-users",
+  summary: "List application users",
   description:
     "Retrieve a list of application users for the specified application.",
-  request: { params: IdParamsSchema },
+  request: { params: ApplicationIdParamsSchema },
   responses: {
     200: {
       description: "OK — list returned successfully.",
@@ -38,11 +39,11 @@ export const list = createRoute({
 export const create = createRoute({
   tags,
   method: "post",
-  path: "/applications/{id}/app-users",
-  summary: "Create a new application user",
+  path: "/applications/{applicationId}/app-users",
+  summary: "Create application user",
   description: "Create a new AppUser for the specified application.",
   request: {
-    params: IdParamsSchema,
+    params: ApplicationIdParamsSchema,
     body: {
       description: "The app user to create",
       content: {
@@ -75,10 +76,10 @@ export const create = createRoute({
 export const getOne = createRoute({
   tags,
   method: "get",
-  path: "/applications/{id}/app-users/{userId}",
-  summary: "Retrieve an application user by ID",
+  path: "/applications/{applicationId}/app-users/{appUserId}",
+  summary: "Get application user",
   description:
-    "Retrieve the details of a single AppUser identified by userId for the specified application.",
+    "Retrieve the details of a single AppUser identified by appUserId for the specified application.",
   request: { params: AppUserParamsSchema },
   responses: {
     200: {
@@ -93,13 +94,14 @@ export const getOne = createRoute({
       },
     },
     422: {
-      description: "Unprocessable Entity — invalid path parameter (userId).",
+      description: "Unprocessable Entity — invalid path parameter (appUserId).",
       content: {
         "application/json": { schema: createErrorSchema(AppUserParamsSchema) },
       },
     },
     404: {
-      description: "Not Found — no app user exists with the provided userId.",
+      description:
+        "Not Found — no app user exists with the provided appUserId.",
       content: { "application/json": { schema: NotFoundSchema } },
     },
   },
@@ -108,10 +110,10 @@ export const getOne = createRoute({
 export const patch = createRoute({
   tags,
   method: "patch",
-  path: "/applications/{id}/app-users/{userId}",
-  summary: "Update an application user",
+  path: "/applications/{applicationId}/app-users/{appUserId}",
+  summary: "Update application user",
   description:
-    "Partially update an existing AppUser identified by userId for the specified application.",
+    "Partially update an existing AppUser identified by appUserId for the specified application.",
   request: {
     params: AppUserParamsSchema,
     body: {
@@ -144,7 +146,7 @@ export const patch = createRoute({
     },
     404: {
       description:
-        "Not Found — no app user exists with the provided userId to update.",
+        "Not Found — no app user exists with the provided appUserId to update.",
       content: { "application/json": { schema: NotFoundSchema } },
     },
   },
@@ -153,10 +155,10 @@ export const patch = createRoute({
 export const remove = createRoute({
   tags,
   method: "delete",
-  path: "/applications/{id}/app-users/{userId}",
-  summary: "Delete an application user",
+  path: "/applications/{applicationId}/app-users/{appUserId}",
+  summary: "Delete application user",
   description:
-    "Delete the AppUser identified by userId for the specified application.",
+    "Delete the AppUser identified by appUserId for the specified application.",
   request: { params: AppUserParamsSchema },
   responses: {
     200: {
@@ -171,14 +173,15 @@ export const remove = createRoute({
       },
     },
     422: {
-      description: "Unprocessable Entity — invalid path parameters (userId).",
+      description:
+        "Unprocessable Entity — invalid path parameters (appUserId).",
       content: {
         "application/json": { schema: createErrorSchema(AppUserParamsSchema) },
       },
     },
     404: {
       description:
-        "Not Found — no app user exists with the provided userId to delete.",
+        "Not Found — no app user exists with the provided appUserId to delete.",
       content: { "application/json": { schema: NotFoundSchema } },
     },
   },
