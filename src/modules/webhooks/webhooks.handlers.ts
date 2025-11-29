@@ -1,5 +1,4 @@
 import type { RouteHandler } from "@hono/zod-openapi";
-import type { Prisma } from "generated/prisma/client";
 import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { z } from "zod";
@@ -13,31 +12,7 @@ import type {
   RemoveRoute,
 } from "./webhooks.routes";
 import { WebhookSchema } from "./webhooks.schemas";
-
-// Helper function to build webhook filters
-function buildWebhookFilters(
-  appUserId: string,
-  query: {
-    disabled?: boolean;
-    eventTypeId?: string;
-  }
-) {
-  const where: Prisma.WebhookWhereInput = {
-    appUserId,
-  };
-
-  // Filter by disabled status
-  if (query.disabled !== undefined) {
-    where.disabled = query.disabled;
-  }
-
-  // Filter by eventTypeId (webhooks subscribed to this event type)
-  if (query.eventTypeId) {
-    where.eventTypes = { some: { eventTypeId: query.eventTypeId } };
-  }
-
-  return where;
-}
+import { buildWebhookFilters } from "./webhooks.utils";
 
 // ----------------------------
 // List Webhooks for AppUser
@@ -75,10 +50,8 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
   });
   const data = webhooks.map((w) => ({
     ...w,
-    eventTypes: w.eventTypes ?? [],
+    eventTypes: w.eventTypes.map((et) => et.eventTypeId) ?? [],
     appUserId: w.appUserId === null ? undefined : w.appUserId,
-    createdAt: w.createdAt.toISOString(),
-    updatedAt: w.updatedAt.toISOString(),
   }));
   const parsed = z.array(WebhookSchema).parse(data);
   return c.json({ success: true, data: parsed });

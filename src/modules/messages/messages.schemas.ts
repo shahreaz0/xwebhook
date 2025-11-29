@@ -59,36 +59,41 @@ export const MessageListQuerySchema = PaginationQuerySchema.extend({
   order: SortOrderSchema,
   // Filtering
   status: z
-    .array(MessageStatusSchema)
-    .or(MessageStatusSchema)
-    .optional()
+    .preprocess((val) => {
+      if (val === undefined || val === null) {
+        return;
+      }
+      // Handle array (from multiple query params like ?status=PENDING&status=DELIVERED)
+      if (Array.isArray(val)) {
+        return val;
+      }
+      // Handle string (could be single value or comma-separated)
+      if (typeof val === "string") {
+        const parts = val
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        return parts.length === 1 ? parts[0] : parts;
+      }
+
+      return val;
+    }, z.union([MessageStatusSchema, z.array(MessageStatusSchema)]).optional())
     .openapi({
-      param: { name: "status", in: "query" },
       example: ["PENDING", "DELIVERED"],
-      description: "Filter by message status (can specify multiple)",
+      description:
+        "Filter by message status (can specify multiple as comma-separated or multiple query params)",
     }),
-  eventTypeId: z
-    .cuid2()
-    .optional()
-    .openapi({
-      param: { name: "eventTypeId", in: "query" },
-      example: "cm3...",
-      description: "Filter by event type ID",
-    }),
-  deliverAtFrom: z.iso
-    .datetime()
-    .optional()
-    .openapi({
-      param: { name: "deliverAtFrom", in: "query" },
-      example: "2024-01-01T00:00:00Z",
-      description: "Filter messages with deliverAt >= this date",
-    }),
-  deliverAtTo: z.iso
-    .datetime()
-    .optional()
-    .openapi({
-      param: { name: "deliverAtTo", in: "query" },
-      example: "2024-12-31T23:59:59Z",
-      description: "Filter messages with deliverAt <= this date",
-    }),
+  eventTypeId: z.cuid2().optional().openapi({
+    example: "cm3...",
+    description: "Filter by event type ID",
+  }),
+  deliverAtFrom: z.iso.datetime().optional().openapi({
+    example: "2024-01-01T00:00:00Z",
+    description: "Filter messages with deliverAt >= this date",
+  }),
+  deliverAtTo: z.iso.datetime().optional().openapi({
+    example: "2024-12-31T23:59:59Z",
+    description: "Filter messages with deliverAt <= this date",
+  }),
 });
