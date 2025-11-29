@@ -1,7 +1,9 @@
 import type { RouteHandler } from "@hono/zod-openapi";
+import type { Prisma } from "generated/prisma/client";
 import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { z } from "zod";
+import { buildOrderBy, buildPagination } from "@/lib/common-schemas";
 import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type {
   CreateRoute,
@@ -18,6 +20,7 @@ import { EventTypeSchema } from "./event-types.schemas";
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const jwtPayload = c.get("jwtPayload");
   const params = c.req.valid("param");
+  const query = c.req.valid("query");
 
   // Verify application ownership
   const application = await prisma.application.findUnique({
@@ -31,8 +34,42 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
     });
   }
 
+  // Build where clause
+  const where: Prisma.EventTypeWhereInput = {
+    applicationId: params.applicationId,
+  };
+
+  // Filter by archived status
+  if (query.archived !== undefined) {
+    where.archived = query.archived;
+  }
+
+  // Filter by deprecated status
+  if (query.deprecated !== undefined) {
+    where.deprecated = query.deprecated;
+  }
+
+  // Filter by groupName
+  if (query.groupName) {
+    where.groupName = query.groupName;
+  }
+
+  // Search by name (case-insensitive)
+  if (query.search) {
+    where.name = { contains: query.search, mode: "insensitive" };
+  }
+
+  // Build orderBy and pagination
+  const orderBy = buildOrderBy(
+    query.sortBy || "createdAt",
+    query.order || "desc"
+  );
+  const pagination = buildPagination(query.limit, query.offset);
+
   const eventTypes = await prisma.eventType.findMany({
-    where: { applicationId: params.applicationId },
+    where,
+    orderBy,
+    ...pagination,
   });
 
   const parsedEventTypes = z.array(EventTypeSchema).parse(eventTypes);

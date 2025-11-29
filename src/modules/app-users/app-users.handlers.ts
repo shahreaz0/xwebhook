@@ -1,7 +1,9 @@
 import type { RouteHandler } from "@hono/zod-openapi";
+import type { Prisma } from "generated/prisma/client";
 import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { z } from "zod";
+import { buildOrderBy, buildPagination } from "@/lib/common-schemas";
 import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type {
   CreateRoute,
@@ -18,6 +20,8 @@ import { AppUserSchema } from "./app-users.schemas";
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const jwt = c.get("jwtPayload");
   const params = c.req.valid("param");
+  const query = c.req.valid("query");
+
   // Ensure the application belongs to the user
   const app = await prisma.application.findUnique({
     where: { id: params.applicationId },
@@ -28,9 +32,31 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       cause: { success: false },
     });
   }
+
+  // Build where clause
+  const where: Prisma.AppUserWhereInput = {
+    applicationId: params.applicationId,
+  };
+  if (query.search) {
+    where.OR = [
+      { email: { contains: query.search, mode: "insensitive" } },
+      { userId: { contains: query.search, mode: "insensitive" } },
+    ];
+  }
+
+  // Build orderBy and pagination
+  const orderBy = buildOrderBy(
+    query.sortBy || "createdAt",
+    query.order || "desc"
+  );
+  const pagination = buildPagination(query.limit, query.offset);
+
   const appUsers = await prisma.appUser.findMany({
-    where: { applicationId: params.applicationId },
+    where,
+    orderBy,
+    ...pagination,
   });
+
   const parsed = z.array(AppUserSchema).parse(appUsers);
   return c.json({ success: true, data: parsed });
 };

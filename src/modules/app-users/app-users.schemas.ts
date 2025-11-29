@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  createSortBySchema,
+  PaginationQuerySchema,
+  SortOrderSchema,
+} from "@/lib/common-schemas";
 
 export const AppUserSchema = z.object({
   id: z.cuid2().openapi({ example: "ckz1234560000abcdef12345" }),
@@ -25,4 +30,19 @@ export const ApplicationIdParamsSchema = z.object({
 
 export const AppUserParamsSchema = ApplicationIdParamsSchema.extend({
   appUserId: z.cuid2(),
+});
+
+export const AppUserListQuerySchema = PaginationQuerySchema.extend({
+  // Sorting
+  sortBy: createSortBySchema(["email", "createdAt", "updatedAt"], "createdAt"),
+  order: SortOrderSchema,
+  // Filtering
+  search: z
+    .string()
+    .optional()
+    .openapi({
+      param: { name: "search", in: "query" },
+      example: "user@example.com",
+      description: "Search by email or userId (case-insensitive)",
+    }),
 });

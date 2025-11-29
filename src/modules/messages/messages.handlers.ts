@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { z } from "zod";
 import { messagesQueue } from "@/configs/bullmq";
+import { buildOrderBy, buildPagination } from "@/lib/common-schemas";
 import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type {
   CreateRoute,
@@ -12,6 +13,7 @@ import type {
   PatchRoute,
 } from "./messages.routes";
 import { MessageSchema } from "./messages.schemas";
+import { buildMessageFilters } from "./messages.utils";
 
 // ----------------------------
 // List Messages for AppUser
@@ -19,6 +21,8 @@ import { MessageSchema } from "./messages.schemas";
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const jwt = c.get("jwtPayload");
   const params = c.req.valid("param");
+  const query = c.req.valid("query");
+
   // Ensure the app user exists and its application belongs to the authenticated user
   const appUser = await prisma.appUser.findUnique({
     where: { id: params.appUserId },
@@ -30,12 +34,24 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       cause: { success: false },
     });
   }
+
+  // Build filters and query options
+  const where = buildMessageFilters(params.appUserId, query);
+  const orderBy = buildOrderBy(
+    query.sortBy || "createdAt",
+    query.order || "desc"
+  );
+  const pagination = buildPagination(query.limit, query.offset);
+
   const messages = await prisma.message.findMany({
-    where: { appUserId: params.appUserId },
+    where,
+    orderBy,
+    ...pagination,
   });
+
   const data = messages.map((m) => ({
     ...m,
-    appUserId: m.appUserId === null ? undefined : m.appUserId,
+    appUserId: m.appUserId,
     deliverAt: m.deliverAt ? m.deliverAt.toISOString() : null,
     createdAt: m.createdAt.toISOString(),
     payload: m.payload as Record<string, unknown>,

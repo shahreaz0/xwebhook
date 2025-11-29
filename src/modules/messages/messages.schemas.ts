@@ -1,4 +1,9 @@
 import { z } from "@hono/zod-openapi";
+import {
+  createSortBySchema,
+  PaginationQuerySchema,
+  SortOrderSchema,
+} from "@/lib/common-schemas";
 
 export const MessageStatusSchema = z.enum([
   "PENDING",
@@ -46,4 +51,49 @@ export const MessageParamsSchema = AppUserParamsSchema.extend({
   messageId: z
     .cuid2()
     .openapi({ param: { name: "messageId", in: "path", required: true } }),
+});
+
+export const MessageListQuerySchema = PaginationQuerySchema.extend({
+  // Sorting
+  sortBy: createSortBySchema(["createdAt", "deliverAt", "status"], "createdAt"),
+  order: SortOrderSchema,
+  // Filtering
+  status: z
+    .preprocess((val) => {
+      if (val === undefined || val === null) {
+        return;
+      }
+      // Handle array (from multiple query params like ?status=PENDING&status=DELIVERED)
+      if (Array.isArray(val)) {
+        return val;
+      }
+      // Handle string (could be single value or comma-separated)
+      if (typeof val === "string") {
+        const parts = val
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        return parts.length === 1 ? parts[0] : parts;
+      }
+
+      return val;
+    }, z.union([MessageStatusSchema, z.array(MessageStatusSchema)]).optional())
+    .openapi({
+      example: ["PENDING", "DELIVERED"],
+      description:
+        "Filter by message status (can specify multiple as comma-separated or multiple query params)",
+    }),
+  eventTypeId: z.cuid2().optional().openapi({
+    example: "cm3...",
+    description: "Filter by event type ID",
+  }),
+  deliverAtFrom: z.iso.datetime().optional().openapi({
+    example: "2024-01-01T00:00:00Z",
+    description: "Filter messages with deliverAt >= this date",
+  }),
+  deliverAtTo: z.iso.datetime().optional().openapi({
+    example: "2024-12-31T23:59:59Z",
+    description: "Filter messages with deliverAt <= this date",
+  }),
 });

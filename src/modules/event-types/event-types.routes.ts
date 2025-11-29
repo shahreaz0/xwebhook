@@ -1,9 +1,10 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
-import { NotFoundSchema } from "@/lib/schema-contants";
+import { NotFoundSchema } from "@/lib/common-schemas";
 import {
   ApplicationParamsSchema,
   EventTypeCreateSchema,
+  EventTypeListQuerySchema,
   EventTypeParamsSchema,
   EventTypeSchema,
   EventTypeUpdateSchema,
@@ -23,6 +24,7 @@ export const list = createRoute({
     "Retrieve a list of event types for the specified application. Supports paging and filtering (if provided by query parameters).",
   request: {
     params: ApplicationParamsSchema,
+    query: EventTypeListQuerySchema,
   },
   responses: {
     200: {

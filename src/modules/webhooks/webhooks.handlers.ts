@@ -2,6 +2,7 @@ import type { RouteHandler } from "@hono/zod-openapi";
 import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { z } from "zod";
+import { buildOrderBy, buildPagination } from "@/lib/common-schemas";
 import type { AppBindings, AppRouteHandler } from "@/lib/types";
 import type {
   CreateRoute,
@@ -11,6 +12,7 @@ import type {
   RemoveRoute,
 } from "./webhooks.routes";
 import { WebhookSchema } from "./webhooks.schemas";
+import { buildWebhookFilters } from "./webhooks.utils";
 
 // ----------------------------
 // List Webhooks for AppUser
@@ -18,6 +20,8 @@ import { WebhookSchema } from "./webhooks.schemas";
 export const list: AppRouteHandler<ListRoute> = async (c) => {
   const jwt = c.get("jwtPayload");
   const params = c.req.valid("param");
+  const query = c.req.valid("query");
+
   // Ensure the app user exists and its application belongs to the authenticated user
   const appUser = await prisma.appUser.findUnique({
     where: { id: params.appUserId },
@@ -29,16 +33,25 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
       cause: { success: false },
     });
   }
+
+  // Build filters and query options
+  const where = buildWebhookFilters(params.appUserId, query);
+  const orderBy = buildOrderBy(
+    query.sortBy || "createdAt",
+    query.order || "desc"
+  );
+  const pagination = buildPagination(query.limit, query.offset);
+
   const webhooks = await prisma.webhook.findMany({
-    where: { appUserId: params.appUserId },
+    where,
+    orderBy,
+    ...pagination,
     include: { eventTypes: true },
   });
   const data = webhooks.map((w) => ({
     ...w,
-    eventTypes: w.eventTypes ?? [],
-    appUserId: w.appUserId === null ? undefined : w.appUserId,
-    createdAt: w.createdAt.toISOString(),
-    updatedAt: w.updatedAt.toISOString(),
+    eventTypes: w.eventTypes.map((et) => et.eventTypeId) ?? [],
+    appUserId: w.appUserId,
   }));
   const parsed = z.array(WebhookSchema).parse(data);
   return c.json({ success: true, data: parsed });
