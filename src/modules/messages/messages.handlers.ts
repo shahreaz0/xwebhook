@@ -51,7 +51,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
 
   const data = messages.map((m) => ({
     ...m,
-    appUserId: m.appUserId === null ? undefined : m.appUserId,
+    appUserId: m.appUserId,
     deliverAt: m.deliverAt ? m.deliverAt.toISOString() : null,
     createdAt: m.createdAt.toISOString(),
     payload: m.payload as Record<string, unknown>,

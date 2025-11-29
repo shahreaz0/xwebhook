@@ -93,15 +93,16 @@ model AppUser {
 }
 
 model Webhook {
-  id          String   @id @default(cuid(2))
+  id          String  @id @default(cuid(2))
   url         String
   secrets     String
   description String?
-  disabled    Boolean  @default(false)
+  disabled    Boolean @default(false)
+  archived    Boolean @default(false)
   metadata    Json?
   rateLimit   Int?
-  appUser     AppUser? @relation(fields: [appUserId], references: [id])
-  appUserId   String?
+  appUser     AppUser @relation(fields: [appUserId], references: [id])
+  appUserId   String
 
   eventTypes WebhookEventType[]
 
@@ -148,8 +149,8 @@ model WebhookEventType {
 
 model Message {
   id          String        @id @default(cuid(2))
-  appUser     AppUser?      @relation(fields: [appUserId], references: [id])
-  appUserId   String?
+  appUser     AppUser       @relation(fields: [appUserId], references: [id])
+  appUserId   String
   eventType   EventType     @relation(fields: [eventTypeId], references: [id])
   eventTypeId String
   payload     Json

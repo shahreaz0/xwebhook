@@ -51,7 +51,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
   const data = webhooks.map((w) => ({
     ...w,
     eventTypes: w.eventTypes.map((et) => et.eventTypeId) ?? [],
-    appUserId: w.appUserId === null ? undefined : w.appUserId,
+    appUserId: w.appUserId,
   }));
   const parsed = z.array(WebhookSchema).parse(data);
   return c.json({ success: true, data: parsed });
