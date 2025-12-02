@@ -41,7 +41,7 @@ model User {
 
 model Session {
   id        String   @id @default(cuid(2))
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   expiresAt DateTime
   token     String   @unique
@@ -61,7 +61,7 @@ model Application {
   name        String
   description String?
   userId      String
-  user        User    @relation(fields: [userId], references: [id])
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   appUsers   AppUser[]
   eventTypes EventType[]
@@ -76,7 +76,7 @@ model Application {
 model AppUser {
   id            String      @id @default(cuid(2))
   applicationId String
-  application   Application @relation(fields: [applicationId], references: [id])
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   userId        String
   email         String
   metadata      Json?
@@ -101,7 +101,7 @@ model Webhook {
   archived    Boolean @default(false)
   metadata    Json?
   rateLimit   Int?
-  appUser     AppUser @relation(fields: [appUserId], references: [id])
+  appUser     AppUser @relation(fields: [appUserId], references: [id], onDelete: Cascade)
   appUserId   String
 
   eventTypes WebhookEventType[]
@@ -120,7 +120,7 @@ model EventType {
   name          String
   description   String?
   applicationId String
-  application   Application @relation(fields: [applicationId], references: [id])
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   messages           Message[]
   webhookConnections WebhookEventType[]
@@ -140,8 +140,8 @@ model WebhookEventType {
   webhookId   String
   eventTypeId String
 
-  webhook   Webhook   @relation(fields: [webhookId], references: [id])
-  eventType EventType @relation(fields: [eventTypeId], references: [id])
+  webhook   Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  eventType EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
 
   @@id([webhookId, eventTypeId])
   @@index([eventTypeId])
@@ -149,9 +149,9 @@ model WebhookEventType {
 
 model Message {
   id          String        @id @default(cuid(2))
-  appUser     AppUser       @relation(fields: [appUserId], references: [id])
+  appUser     AppUser       @relation(fields: [appUserId], references: [id], onDelete: Cascade)
   appUserId   String
-  eventType   EventType     @relation(fields: [eventTypeId], references: [id])
+  eventType   EventType     @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
   eventTypeId String
   payload     Json
   status      MessageStatus @default(PENDING)

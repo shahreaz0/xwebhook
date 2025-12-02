@@ -12,6 +12,9 @@ export const getMe: RouteHandler<GetMeRoute, AppBindings> = async (c) => {
 
   const user = await prisma.user.findUnique({
     where: { id: jwtPayload.id },
+    omit: {
+      password: true,
+    },
   });
 
   if (!user) {
