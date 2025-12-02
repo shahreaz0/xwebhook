@@ -5,6 +5,7 @@ import {
   ApplicationCreateSchema,
   ApplicationListQuerySchema,
   ApplicationSchema,
+  ApplicationSchemaWithUser,
   ApplicationUpdateSchema,
 } from "./applications.schemas";
 
@@ -103,7 +104,7 @@ export const getOne = createRoute({
         "application/json": {
           schema: z.object({
             success: z.boolean().openapi({ example: true }),
-            data: ApplicationSchema,
+            data: ApplicationSchemaWithUser,
           }),
         },
       },

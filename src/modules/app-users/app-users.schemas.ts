@@ -4,6 +4,7 @@ import {
   PaginationQuerySchema,
   SortOrderSchema,
 } from "@/lib/common-schemas";
+import { ApplicationSchema } from "../applications/applications.schemas";
 
 export const AppUserSchema = z.object({
   id: z.cuid2().openapi({ example: "ckz1234560000abcdef12345" }),
@@ -13,6 +14,11 @@ export const AppUserSchema = z.object({
   metadata: z.any().nullable().optional().openapi({ example: null }),
   createdAt: z.date().openapi({ example: new Date().toISOString() }),
   updatedAt: z.date().openapi({ example: new Date().toISOString() }),
+  deletedAt: z.date().nullish().openapi({ example: new Date().toISOString() }),
+});
+
+export const AppUserSchemaDetails = AppUserSchema.extend({
+  application: ApplicationSchema,
 });
 
 export const AppUserCreateSchema = AppUserSchema.omit({

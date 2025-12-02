@@ -102,7 +102,11 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
   }
   const appUser = await prisma.appUser.findFirst({
     where: { applicationId: params.applicationId, id: params.appUserId },
+    include: {
+      application: true,
+    },
   });
+
   if (!appUser) {
     throw new HTTPException(404, {
       message: "AppUser not found",

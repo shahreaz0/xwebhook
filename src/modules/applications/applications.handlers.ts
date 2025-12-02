@@ -79,6 +79,9 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
 
   const application = await prisma.application.findUnique({
     where: { id: params.id },
+    include: {
+      user: true,
+    },
   });
 
   if (!application || application.userId !== jwtPayload.id) {
