@@ -36,7 +36,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
     query.order || "desc"
   );
 
-  const pagination = buildPagination(query.limit, query.offset);
+  const pagination = buildPagination(query.page, query.perPage);
 
   const applications = await prisma.application.findMany({
     where,
