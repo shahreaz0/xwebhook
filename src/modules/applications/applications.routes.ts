@@ -19,8 +19,7 @@ export const list = createRoute({
   method: "get",
   path: "/applications",
   summary: "List applications",
-  description:
-    "Retrieve a list of applications belonging to the authenticated user. Supports paging and filtering (if provided by query parameters).",
+  description: "Retrieve a list of applications for the authenticated user.",
   request: {
     query: ApplicationListQuerySchema,
   },
@@ -47,9 +46,8 @@ export const create = createRoute({
   tags,
   method: "post",
   path: "/applications",
-  summary: "Create a new application",
-  description:
-    "Create a new application for the authenticated user. Provide the name and optional description. Returns the created application record.",
+  summary: "Create application",
+  description: "Create a new application for the authenticated user.",
   request: {
     body: {
       description: "The application to create",
@@ -91,9 +89,8 @@ export const getOne = createRoute({
   tags,
   method: "get",
   path: "/applications/{id}",
-  summary: "Retrieve an application by ID",
-  description:
-    "Retrieve the details of a single application identified by {id}.",
+  summary: "Get application",
+  description: "Retrieve the details of a single application identified by id.",
   request: {
     params: IdParamsSchema,
   },
@@ -136,8 +133,7 @@ export const patch = createRoute({
   method: "patch",
   path: "/applications/{id}",
   summary: "Update application",
-  description:
-    "Partially update an existing application identified by {id}. Only provided fields will be changed. Returns the updated application.",
+  description: "Partially update an existing application identified by id.",
   request: {
     params: IdParamsSchema,
     body: {
@@ -194,8 +190,7 @@ export const remove = createRoute({
   method: "delete",
   path: "/applications/{id}",
   summary: "Delete application",
-  description:
-    "Delete the application identified by {id} for the authenticated user. This operation permanently removes the application.",
+  description: "Delete the application identified by id.",
   request: {
     params: IdParamsSchema,
   },

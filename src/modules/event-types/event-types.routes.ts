@@ -20,8 +20,7 @@ export const list = createRoute({
   method: "get",
   path: "/applications/{applicationId}/event-types",
   summary: "List event types",
-  description:
-    "Retrieve a list of event types for the specified application. Supports paging and filtering (if provided by query parameters).",
+  description: "Retrieve a list of event types for the specified application.",
   request: {
     params: ApplicationParamsSchema,
     query: EventTypeListQuerySchema,
@@ -50,8 +49,7 @@ export const create = createRoute({
   method: "post",
   path: "/applications/{applicationId}/event-types",
   summary: "Create event type",
-  description:
-    "Create a new event type for the specified application. Provide the name and description. Returns the created event type record.",
+  description: "Create a new event type for the specified application.",
   request: {
     params: ApplicationParamsSchema,
     body: {
@@ -96,7 +94,7 @@ export const getOne = createRoute({
   path: "/applications/{applicationId}/event-types/{eventTypeId}",
   summary: "Get event type",
   description:
-    "Retrieve the details of a single event type identified by {eventTypeId} for the specified application.",
+    "Retrieve the details of a single event type identified by eventTypeId for the specified application.",
   request: {
     params: EventTypeParamsSchema,
   },
@@ -141,7 +139,7 @@ export const patch = createRoute({
   path: "/applications/{applicationId}/event-types/{eventTypeId}",
   summary: "Update event type",
   description:
-    "Partially update an existing event type identified by {eventTypeId} for the specified application. Only provided fields will be changed. Returns the updated event type.",
+    "Partially update an existing event type identified by eventTypeId for the specified application.",
   request: {
     params: EventTypeParamsSchema,
     body: {
@@ -199,7 +197,7 @@ export const remove = createRoute({
   path: "/applications/{applicationId}/event-types/{eventTypeId}",
   summary: "Delete event type",
   description:
-    "Delete the event type identified by {eventTypeId} for the specified application. This operation permanently removes the event type.",
+    "Delete the event type identified by eventTypeId for the specified application.",
   request: {
     params: EventTypeParamsSchema,
   },
