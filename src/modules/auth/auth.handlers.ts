@@ -1,12 +1,17 @@
-import type { RouteHandler } from "@hono/zod-openapi";
+import { getConnInfo } from "hono/bun";
 import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { env } from "@/lib/env";
-import type { AppBindings } from "@/lib/types";
-import type { LoginRoute, RegisterRoute } from "./auth.routes";
-import { hashPassword, signJwt, verifyPassword } from "./auth.services";
+import type { AppRouteHandler } from "@/lib/types";
+import type { GetTokenRoute, LoginRoute, RegisterRoute } from "./auth.routes";
+import {
+  generateSessionToken,
+  hashPassword,
+  signJwt,
+  verifyPassword,
+} from "./auth.services";
 
-export const register: RouteHandler<RegisterRoute, AppBindings> = async (c) => {
+export const register: AppRouteHandler<RegisterRoute> = async (c) => {
   const body = c.req.valid("json");
 
   const existing = await prisma.user.findUnique({
@@ -44,11 +49,18 @@ export const register: RouteHandler<RegisterRoute, AppBindings> = async (c) => {
   );
 };
 
-export const login: RouteHandler<LoginRoute, AppBindings> = async (c) => {
+export const login: AppRouteHandler<LoginRoute> = async (c) => {
   const body = c.req.valid("json");
 
   const user = await prisma.user.findUnique({
     where: { email: body.email },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      createdAt: true,
+      password: true,
+    },
   });
 
   if (!user) {
@@ -61,20 +73,33 @@ export const login: RouteHandler<LoginRoute, AppBindings> = async (c) => {
     throw new HTTPException(401, { message: "Invalid email or password" });
   }
 
-  const token = await signJwt(
-    {
-      id: user.id,
-      email: user.email,
+  // create session
+  const token = generateSessionToken();
+  const info = getConnInfo(c);
+
+  const session = await prisma.session.create({
+    data: {
+      userId: user.id,
+      token,
+      ipAddress: info.remote.address,
+      userAgent: c.req.header("User-Agent"),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     },
-    env.JWT_SECRET
-  );
+
+    omit: {
+      createdAt: true,
+      updatedAt: true,
+      deletedAt: true,
+      userId: true,
+    },
+  });
 
   return c.json(
     {
       success: true,
       message: "Login Successful",
-      token,
-      data: {
+      session,
+      user: {
         id: user.id,
         email: user.email,
         name: user.name,
@@ -83,4 +108,38 @@ export const login: RouteHandler<LoginRoute, AppBindings> = async (c) => {
     },
     200
   );
+};
+
+export const getToken: AppRouteHandler<GetTokenRoute> = async (c) => {
+  const token = c.req.header("token");
+
+  if (!token) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+
+  const session = await prisma.session.findUnique({
+    where: { token },
+    select: {
+      userId: true,
+      user: {
+        select: {
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!session) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+
+  const jwtToken = await signJwt(
+    {
+      id: session.userId,
+      email: session.user.email,
+    },
+    env.JWT_SECRET
+  );
+
+  return c.json({ success: true, data: { token: jwtToken } }, 200);
 };

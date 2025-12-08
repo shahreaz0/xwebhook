@@ -47,3 +47,9 @@ export async function verifyPassword(
 ): Promise<boolean> {
   return await argonVerify(hashed, plain);
 }
+
+export function generateSessionToken(): string {
+  // Generate 32 random bytes and encode as base64url
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return Buffer.from(bytes).toString("base64url");
+}

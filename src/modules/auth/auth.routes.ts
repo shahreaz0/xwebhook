@@ -1,7 +1,13 @@
-import { createRoute, z } from "@hono/zod-openapi";
+import { createRoute } from "@hono/zod-openapi";
 import { createErrorSchema } from "stoker/openapi/schemas";
+import { z } from "zod";
 import { createHttpErrorSchema } from "@/lib/common-schemas";
-import { AuthUserSchema, LoginSchema, RegisterSchema } from "./auth.schemas";
+import {
+  AuthUserSchema,
+  LoginResponseSchema,
+  LoginSchema,
+  RegisterSchema,
+} from "./auth.schemas";
 
 const tags = ["Auth"];
 
@@ -83,11 +89,57 @@ export const login = createRoute({
       description: "OK — login successful",
       content: {
         "application/json": {
+          schema: LoginResponseSchema,
+        },
+      },
+    },
+    422: {
+      description: "Unprocessable Entity — request body validation failed.",
+      content: {
+        "application/json": {
+          schema: createErrorSchema(LoginSchema),
+        },
+      },
+    },
+    401: {
+      description: "Unauthorized — credentials invalid.",
+      content: {
+        "application/json": {
+          schema: createHttpErrorSchema({
+            statusCode: "401",
+            example: "Invalid email or password",
+          }),
+        },
+      },
+    },
+  },
+});
+
+export const getToken = createRoute({
+  tags,
+  method: "post",
+  path: "/auth/token",
+  summary: "Get a new jwt token",
+  description: "Get a new jwt token.",
+
+  request: {
+    headers: z.object({
+      token: z.string().openapi({
+        description: "Session token for authentication",
+      }),
+    }),
+  },
+
+  responses: {
+    200: {
+      description: "OK — login successful",
+      content: {
+        "application/json": {
           schema: z.object({
-            message: z.string(),
             success: z.boolean().openapi({ example: true }),
-            token: z.string().openapi({ example: "jwt-token-here" }),
-            data: AuthUserSchema,
+            data: z.object({
+              token: z.string().openapi({ example: "your_token_here" }),
+            }),
           }),
         },
       },
@@ -116,3 +168,4 @@ export const login = createRoute({
 
 export type RegisterRoute = typeof register;
 export type LoginRoute = typeof login;
+export type GetTokenRoute = typeof getToken;
