@@ -3,7 +3,12 @@ import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { env } from "@/lib/env";
 import type { AppRouteHandler } from "@/lib/types";
-import type { GetTokenRoute, LoginRoute, RegisterRoute } from "./auth.routes";
+import type {
+  GetTokenRoute,
+  LoginRoute,
+  LogoutRoute,
+  RegisterRoute,
+} from "./auth.routes";
 import {
   generateSessionToken,
   hashPassword,
@@ -142,4 +147,18 @@ export const getToken: AppRouteHandler<GetTokenRoute> = async (c) => {
   );
 
   return c.json({ success: true, data: { token: jwtToken } }, 200);
+};
+
+export const logout: AppRouteHandler<LogoutRoute> = async (c) => {
+  const token = c.req.header("token");
+
+  if (!token) {
+    throw new HTTPException(401, { message: "Unauthorized" });
+  }
+
+  await prisma.session.delete({
+    where: { token },
+  });
+
+  return c.json({ success: true }, 200);
 };

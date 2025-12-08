@@ -144,11 +144,43 @@ export const getToken = createRoute({
         },
       },
     },
-    422: {
-      description: "Unprocessable Entity — request body validation failed.",
+    401: {
+      description: "Unauthorized — credentials invalid.",
       content: {
         "application/json": {
-          schema: createErrorSchema(LoginSchema),
+          schema: createHttpErrorSchema({
+            statusCode: "401",
+            example: "Unauthorized",
+          }),
+        },
+      },
+    },
+  },
+});
+
+export const logout = createRoute({
+  tags,
+  method: "post",
+  path: "/auth/logout",
+  summary: "Logout user",
+  description: "Logout user.",
+
+  request: {
+    headers: z.object({
+      token: z.string().openapi({
+        description: "Session token for authentication",
+      }),
+    }),
+  },
+
+  responses: {
+    200: {
+      description: "OK — logout successful",
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.boolean().openapi({ example: true }),
+          }),
         },
       },
     },
@@ -158,7 +190,7 @@ export const getToken = createRoute({
         "application/json": {
           schema: createHttpErrorSchema({
             statusCode: "401",
-            example: "Invalid email or password",
+            example: "Unauthorized",
           }),
         },
       },
@@ -169,3 +201,4 @@ export const getToken = createRoute({
 export type RegisterRoute = typeof register;
 export type LoginRoute = typeof login;
 export type GetTokenRoute = typeof getToken;
+export type LogoutRoute = typeof logout;
