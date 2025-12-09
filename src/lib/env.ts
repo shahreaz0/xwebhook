@@ -1,6 +1,5 @@
 import path from "node:path";
 import dotenv from "dotenv";
-import pino from "pino";
 import { ZodError, z } from "zod";
 
 dotenv.config({
@@ -26,32 +25,18 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(8088),
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string(),
-
-  // redis
   REDIS_URL: z.url(),
-  // REDIS_PORT: z.coerce.number().int().min(1).max(65_535),
-  // REDIS_USERNAME: z.string().nonempty().optional(),
-  // REDIS_PASSWORD: z.string().nonempty().optional(),
-  // REDIS_DB: z.coerce.number().int().min(0).optional(),
 });
 
-export let env: z.infer<typeof envSchema>;
-
-try {
-  env = envSchema.parse(process.env);
-} catch (error) {
-  if (error instanceof ZodError) {
-    // Use standalone pino logger to avoid circular dependency with lib/logger.ts
-    const logger = pino({
-      transport: {
-        target: "pino-pretty",
-        options: { colorize: true },
-      },
-    });
-
-    logger.error("Invalid env");
-    logger.error(z.treeifyError(error));
+function getEnv() {
+  try {
+    return envSchema.parse(process.env);
+  } catch (error) {
+    console.error("Invalid env");
+    console.error(error instanceof ZodError && z.prettifyError(error));
 
     process.exit(1);
   }
 }
+
+export const env = getEnv();
