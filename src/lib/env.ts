@@ -1,5 +1,6 @@
 import path from "node:path";
 import dotenv from "dotenv";
+import pino from "pino";
 import { ZodError, z } from "zod";
 
 dotenv.config({
@@ -40,8 +41,16 @@ try {
   env = envSchema.parse(process.env);
 } catch (error) {
   if (error instanceof ZodError) {
-    console.error("Invalid env");
-    console.error(z.treeifyError(error));
+    // Use standalone pino logger to avoid circular dependency with lib/logger.ts
+    const logger = pino({
+      transport: {
+        target: "pino-pretty",
+        options: { colorize: true },
+      },
+    });
+
+    logger.error("Invalid env");
+    logger.error(z.treeifyError(error));
 
     process.exit(1);
   }

@@ -1,5 +1,6 @@
 import xior from "xior";
 import errorRetryPlugin from "xior/plugins/error-retry";
+import { logger } from "@/lib/logger";
 
 export const http = xior.create();
 
@@ -10,7 +11,7 @@ http.plugins.use(
       return count * 1e1;
     },
     onRetry(config, _error, count) {
-      console.log(`${config.method} ${config.url} retry ${count} times`);
+      logger.info(`${config.method} ${config.url} retry ${count} times`);
     },
   })
 );
