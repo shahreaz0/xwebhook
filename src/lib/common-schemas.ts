@@ -4,7 +4,10 @@ import { z } from "@hono/zod-openapi";
  * ID path parameter schema
  */
 export const IdParamsSchema = z.object({
-  id: z.string().openapi({ param: { name: "id", in: "path", required: true } }),
+  id: z.string().openapi({
+    example: "icuqfr6x1asagxffzsl1pkev",
+    description: "ID of the resource",
+  }),
 });
 
 /**
@@ -39,32 +42,18 @@ export function createHttpErrorSchema(params: {
 /**
  * Common pagination query parameters
  * Optional: If not provided, no pagination is applied
- * Max limit: 100
+ * Max perPage: 100
  */
 export const PaginationQuerySchema = z.object({
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(100)
-    .optional()
-    .openapi({
-      param: { name: "limit", in: "query" },
-      example: 50,
-      description:
-        "Maximum number of items to return (1-100). If not provided, all items are returned.",
-    }),
-  offset: z.coerce
-    .number()
-    .int()
-    .min(0)
-    .optional()
-    .openapi({
-      param: { name: "offset", in: "query" },
-      example: 0,
-      description:
-        "Number of items to skip. If not provided, no offset is applied.",
-    }),
+  perPage: z.coerce.number().int().min(1).max(100).optional().openapi({
+    example: 50,
+    description:
+      "Number of items per page (1-100). If not provided, all items are returned.",
+  }),
+  page: z.coerce.number().int().min(1).default(1).openapi({
+    example: 1,
+    description: "Page number (1-indexed). Defaults to 1.",
+  }),
 });
 
 /**
@@ -104,27 +93,24 @@ export function buildOrderBy(sortBy: string, order: "asc" | "desc") {
 }
 
 /**
- * Helper to build Prisma pagination from limit and offset params
- * Returns empty object if neither limit nor offset are provided
+ * Helper to build Prisma pagination from page and perPage params
+ * Returns empty object if perPage is not provided
  */
 export function buildPagination(
-  limit?: number | undefined,
-  offset?: number | undefined
+  page?: number | undefined,
+  perPage?: number | undefined
 ) {
-  // Only apply pagination if at least one parameter is provided
-  if (limit === undefined && offset === undefined) {
+  // Only apply pagination if perPage is provided
+  if (perPage === undefined) {
     return {};
   }
 
   const pagination: { skip?: number; take?: number } = {};
 
-  if (offset !== undefined) {
-    pagination.skip = offset;
-  }
-
-  if (limit !== undefined) {
-    pagination.take = limit;
-  }
+  // Calculate skip based on page number (default to page 1)
+  const currentPage = page ?? 1;
+  pagination.skip = (currentPage - 1) * perPage;
+  pagination.take = perPage;
 
   return pagination;
 }

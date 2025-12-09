@@ -36,7 +36,7 @@ export const list: AppRouteHandler<ListRoute> = async (c) => {
     query.order || "desc"
   );
 
-  const pagination = buildPagination(query.limit, query.offset);
+  const pagination = buildPagination(query.page, query.perPage);
 
   const applications = await prisma.application.findMany({
     where,
@@ -79,6 +79,9 @@ export const getOne: RouteHandler<GetOneRoute, AppBindings> = async (c) => {
 
   const application = await prisma.application.findUnique({
     where: { id: params.id },
+    include: {
+      user: true,
+    },
   });
 
   if (!application || application.userId !== jwtPayload.id) {

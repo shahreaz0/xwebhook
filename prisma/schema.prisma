@@ -33,15 +33,16 @@ model User {
   apps     Application[]
   sessions Session[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([email])
 }
 
 model Session {
   id        String   @id @default(cuid(2))
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   expiresAt DateTime
   token     String   @unique
@@ -49,8 +50,9 @@ model Session {
   ipAddress String?
   userAgent String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([userId, expiresAt])
   @@index([userId])
@@ -61,13 +63,14 @@ model Application {
   name        String
   description String?
   userId      String
-  user        User    @relation(fields: [userId], references: [id])
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   appUsers   AppUser[]
   eventTypes EventType[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([userId])
   @@index([name])
@@ -76,7 +79,7 @@ model Application {
 model AppUser {
   id            String      @id @default(cuid(2))
   applicationId String
-  application   Application @relation(fields: [applicationId], references: [id])
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   userId        String
   email         String
   metadata      Json?
@@ -84,8 +87,9 @@ model AppUser {
   webhooks Webhook[]
   messages Message[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@unique([applicationId, userId]) // Prevent duplicates
   @@index([applicationId])
@@ -101,13 +105,14 @@ model Webhook {
   archived    Boolean @default(false)
   metadata    Json?
   rateLimit   Int?
-  appUser     AppUser @relation(fields: [appUserId], references: [id])
+  appUser     AppUser @relation(fields: [appUserId], references: [id], onDelete: Cascade)
   appUserId   String
 
   eventTypes WebhookEventType[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@unique([appUserId, url])
   @@index([appUserId])
@@ -120,7 +125,7 @@ model EventType {
   name          String
   description   String?
   applicationId String
-  application   Application @relation(fields: [applicationId], references: [id])
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   messages           Message[]
   webhookConnections WebhookEventType[]
@@ -129,8 +134,9 @@ model EventType {
   deprecated Boolean @default(false)
   groupName  String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@unique([applicationId, name])
   @@index([applicationId])
@@ -140,8 +146,10 @@ model WebhookEventType {
   webhookId   String
   eventTypeId String
 
-  webhook   Webhook   @relation(fields: [webhookId], references: [id])
-  eventType EventType @relation(fields: [eventTypeId], references: [id])
+  webhook   Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  eventType EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+
+  deletedAt DateTime?
 
   @@id([webhookId, eventTypeId])
   @@index([eventTypeId])
@@ -149,14 +157,15 @@ model WebhookEventType {
 
 model Message {
   id          String        @id @default(cuid(2))
-  appUser     AppUser       @relation(fields: [appUserId], references: [id])
+  appUser     AppUser       @relation(fields: [appUserId], references: [id], onDelete: Cascade)
   appUserId   String
-  eventType   EventType     @relation(fields: [eventTypeId], references: [id])
+  eventType   EventType     @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
   eventTypeId String
   payload     Json
   status      MessageStatus @default(PENDING)
   deliverAt   DateTime?
   createdAt   DateTime      @default(now())
+  deletedAt   DateTime?
 
   @@index([eventTypeId])
   @@index([appUserId])

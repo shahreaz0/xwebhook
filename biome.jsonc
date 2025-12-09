@@ -1,5 +1,4 @@
 {
-  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "extends": ["ultracite/core"],
   "linter": {
     "rules": {
@@ -7,5 +6,8 @@
         "noNamespaceImport": "off"
       }
     }
+  },
+  "javascript": {
+    "globals": ["Bun"]
   }
 }

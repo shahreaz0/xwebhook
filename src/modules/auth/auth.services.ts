@@ -1,6 +1,3 @@
-// lib/auth/jwt.ts
-
-import { hash as argonHash, verify as argonVerify } from "argon2";
 import { jwtVerify, SignJWT } from "jose";
 
 const encoder = new TextEncoder();
@@ -33,11 +30,10 @@ export async function verifyJwt<T = unknown>(
 }
 
 export async function hashPassword(password: string): Promise<string> {
-  return await argonHash(password, {
-    type: 2, // argon2id
-    memoryCost: 2 ** 16, // 64MB
-    timeCost: 3,
-    parallelism: 1,
+  return await Bun.password.hash(password, {
+    algorithm: "argon2id",
+    memoryCost: 19_456,
+    timeCost: 2,
   });
 }
 
@@ -45,5 +41,5 @@ export async function verifyPassword(
   hashed: string,
   plain: string
 ): Promise<boolean> {
-  return await argonVerify(hashed, plain);
+  return await Bun.password.verify(plain, hashed);
 }
