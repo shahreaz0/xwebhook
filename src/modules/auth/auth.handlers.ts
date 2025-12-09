@@ -3,18 +3,14 @@ import { HTTPException } from "hono/http-exception";
 import { prisma } from "prisma";
 import { env } from "@/lib/env";
 import type { AppRouteHandler } from "@/lib/types";
+import { createSession } from "../sessions/sessions.services";
 import type {
   GetTokenRoute,
   LoginRoute,
   LogoutRoute,
   RegisterRoute,
 } from "./auth.routes";
-import {
-  generateSessionToken,
-  hashPassword,
-  signJwt,
-  verifyPassword,
-} from "./auth.services";
+import { hashPassword, signJwt, verifyPassword } from "./auth.services";
 
 export const register: AppRouteHandler<RegisterRoute> = async (c) => {
   const body = c.req.valid("json");
@@ -79,25 +75,12 @@ export const login: AppRouteHandler<LoginRoute> = async (c) => {
   }
 
   // create session
-  const token = generateSessionToken();
   const info = getConnInfo(c);
-
-  const session = await prisma.session.create({
-    data: {
-      userId: user.id,
-      token,
-      ipAddress: info.remote.address,
-      userAgent: c.req.header("User-Agent"),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    },
-
-    omit: {
-      createdAt: true,
-      updatedAt: true,
-      deletedAt: true,
-      userId: true,
-    },
-  });
+  const session = await createSession(
+    user.id,
+    info.remote.address,
+    c.req.header("User-Agent")
+  );
 
   return c.json(
     {
@@ -126,6 +109,7 @@ export const getToken: AppRouteHandler<GetTokenRoute> = async (c) => {
     where: { token },
     select: {
       userId: true,
+      expiresAt: true,
       user: {
         select: {
           email: true,
@@ -136,6 +120,10 @@ export const getToken: AppRouteHandler<GetTokenRoute> = async (c) => {
 
   if (!session) {
     throw new HTTPException(401, { message: "Unauthorized" });
+  }
+
+  if (session.expiresAt < new Date()) {
+    throw new HTTPException(401, { message: "Session expired" });
   }
 
   const jwtToken = await signJwt(
