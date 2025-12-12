@@ -1,6 +1,7 @@
 import type { Webhook } from "generated/prisma/client";
 import type { MessageStatus } from "generated/prisma/enums";
 import { prisma } from "prisma";
+import { logger } from "@/lib/logger";
 import { http } from "@/lib/xior";
 import type { MessageJobData } from "./messages.types";
 
@@ -30,7 +31,7 @@ export async function deliverMessage(
 
     return response.data;
   } catch (error) {
-    console.log(error);
+    logger.error(error);
 
     throw new Error("Failed to deliver message", {
       cause: {
