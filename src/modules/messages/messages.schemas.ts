@@ -1,19 +1,12 @@
 import { z } from "@hono/zod-openapi";
+import { MessageStatus } from "generated/prisma/enums";
 import {
   createSortBySchema,
   PaginationQuerySchema,
   SortOrderSchema,
 } from "@/lib/common-schemas";
 
-export const MessageStatusSchema = z.enum([
-  "PENDING",
-  "PROCESSING",
-  "DELIVERED",
-  "FAILED",
-  "RETRYING",
-  "SKIPPED",
-  "EXPIRED",
-]);
+export const MessageStatusSchema = z.enum(MessageStatus);
 
 export const MessageSchema = z.object({
   id: z.cuid2().openapi({ example: "cm3..." }),
@@ -22,7 +15,7 @@ export const MessageSchema = z.object({
   payload: z
     .record(z.string(), z.unknown())
     .openapi({ example: { foo: "bar" } }),
-  status: MessageStatusSchema.openapi({ example: "PENDING" }),
+  status: MessageStatusSchema.openapi({ example: MessageStatus.PENDING }),
   deliverAt: z.string().nullable().openapi({ example: "2024-01-01T00:00:00Z" }),
   createdAt: z.string().openapi({ example: "2024-01-01T00:00:00Z" }),
 });

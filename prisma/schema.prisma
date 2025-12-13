@@ -127,6 +127,7 @@ model Webhook {
   @@index([appUserId])
   @@index([url])
   @@index([disabled])
+  @@index([appUserId, disabled])
 }
 
 model EventType {
@@ -162,6 +163,7 @@ model WebhookEventType {
 
   @@id([webhookId, eventTypeId])
   @@index([eventTypeId])
+  @@index([eventTypeId, webhookId])
 }
 
 model Message {
@@ -181,6 +183,7 @@ model Message {
   @@index([appUserId])
   @@index([deliverAt])
   @@index([status, deliverAt])
+  @@index([status, createdAt])
 }
 
 model MessageDelivery {
@@ -204,4 +207,5 @@ model MessageDelivery {
   @@index([webhookId])
   @@index([messageId])
   @@index([status])
+  @@index([nextRetryAt, status])
 }

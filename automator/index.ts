@@ -17,7 +17,7 @@ app.post("/webhook", async (c) => {
 
   console.log("secret", secret);
 
-  if (secret !== "aabb") {
+  if (secret !== "supersecret") {
     return c.json("Unauthorized", 401);
   }
 

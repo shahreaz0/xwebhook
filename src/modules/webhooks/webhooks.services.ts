@@ -1,32 +1,42 @@
 import { prisma } from "prisma";
-import type { XiorResponse } from "xior";
-// import { prisma } from "../../../prisma";
-import { http } from "../../lib/xior";
+import {
+  type CachedWebhook,
+  getCachedWebhooks,
+  setCachedWebhooks,
+} from "./webhooks.utils";
 
-export async function callWebhooks(payload: unknown) {
-  const webhooks = await prisma.webhook.findMany({
-    where: {
-      // event: event,
-    },
-  });
+export async function getWebhooksForMessage(
+  appUserId: string,
+  eventTypeId: string
+) {
+  // Try to get webhooks from cache first
+  let webhooks: CachedWebhook[] | null = await getCachedWebhooks(
+    appUserId,
+    eventTypeId
+  );
 
-  const promises = [] as Promise<XiorResponse<unknown>>[];
-
-  for (const wh of webhooks) {
-    const pro = http.request({
-      method: "post",
-      url: wh.url,
-      data: {
-        data: payload,
+  // If not in cache, fetch from database
+  if (!webhooks) {
+    const dbWebhooks = await prisma.webhook.findMany({
+      where: {
+        appUserId,
+        eventTypes: { some: { eventTypeId } },
+        disabled: false,
       },
-      headers: {
-        "x-webhook-secret": wh.secrets,
+      select: {
+        id: true,
+        url: true,
+        secrets: true,
+        disabled: true,
+        rateLimit: true,
       },
     });
-    promises.push(pro);
+
+    webhooks = dbWebhooks;
+
+    // Cache the results
+    await setCachedWebhooks(appUserId, eventTypeId, webhooks);
   }
 
-  const res = await Promise.allSettled(promises);
-
-  return res;
+  return webhooks;
 }
