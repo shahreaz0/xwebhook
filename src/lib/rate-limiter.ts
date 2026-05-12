@@ -4,11 +4,11 @@ import { logger } from "@/lib/logger";
 const RATE_LIMIT_PREFIX = "rate_limit:";
 const DEFAULT_WINDOW = 60; // 60 seconds sliding window
 
-export type RateLimitResult = {
+export interface RateLimitResult {
   allowed: boolean;
   remaining: number;
   resetAt: number;
-};
+}
 
 /**
  * Check if a webhook request is within rate limit using sliding window

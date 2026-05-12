@@ -118,7 +118,7 @@ export async function deliverMessage(
           messageId: message.id,
           webhookId: wh.id,
           status: "FAILED",
-          lastError: errorMessage.substring(0, 500), // Limit error message length
+          lastError: errorMessage.slice(0, 500), // Limit error message length
         },
       });
     }

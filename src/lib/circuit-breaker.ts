@@ -14,12 +14,12 @@ export const CircuitState = {
 
 export type CircuitState = (typeof CircuitState)[keyof typeof CircuitState];
 
-type CircuitBreakerData = {
-  state: CircuitState;
+interface CircuitBreakerData {
   failureCount: number;
   lastFailureTime: number;
   openedAt?: number;
-};
+  state: CircuitState;
+}
 
 /**
  * Get circuit breaker state for a webhook
