@@ -25,6 +25,7 @@ export const AppUserCreateSchema = AppUserSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  deletedAt: true,
   applicationId: true,
 });
 

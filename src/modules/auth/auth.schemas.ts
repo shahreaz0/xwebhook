@@ -9,8 +9,8 @@ export const RegisterSchema = z.object({
 });
 
 export const LoginSchema = z.object({
-  email: z.email(),
-  password: z.string(),
+  email: z.email().openapi({ example: "a@b.com" }),
+  password: z.string().openapi({ example: "112233" }),
 });
 
 export const LoginResponseSchema = z.object({

@@ -14,6 +14,14 @@ datasource db {
 enum MessageStatus {
   PENDING // waiting to be sent
   PROCESSING // currently sending
+  DELIVERED // all successfully sent
+  FAILED // all failed
+  PARTIAL // partially sent
+}
+
+enum DeliveryStatus {
+  PENDING // waiting to be sent
+  PROCESSING // currently sending
   DELIVERED // successfully sent
   FAILED // failed
   RETRYING // failed before but retrying
@@ -108,7 +116,8 @@ model Webhook {
   appUser     AppUser @relation(fields: [appUserId], references: [id], onDelete: Cascade)
   appUserId   String
 
-  eventTypes WebhookEventType[]
+  eventTypes        WebhookEventType[]
+  messageDeliveries MessageDelivery[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -118,6 +127,7 @@ model Webhook {
   @@index([appUserId])
   @@index([url])
   @@index([disabled])
+  @@index([appUserId, disabled])
 }
 
 model EventType {
@@ -153,22 +163,49 @@ model WebhookEventType {
 
   @@id([webhookId, eventTypeId])
   @@index([eventTypeId])
+  @@index([eventTypeId, webhookId])
 }
 
 model Message {
-  id          String        @id @default(cuid(2))
-  appUser     AppUser       @relation(fields: [appUserId], references: [id], onDelete: Cascade)
-  appUserId   String
-  eventType   EventType     @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
-  eventTypeId String
-  payload     Json
-  status      MessageStatus @default(PENDING)
-  deliverAt   DateTime?
-  createdAt   DateTime      @default(now())
-  deletedAt   DateTime?
+  id                String            @id @default(cuid(2))
+  appUser           AppUser           @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  appUserId         String
+  eventType         EventType         @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  eventTypeId       String
+  payload           Json
+  status            MessageStatus     @default(PENDING)
+  deliverAt         DateTime?
+  createdAt         DateTime          @default(now())
+  deletedAt         DateTime?
+  messageDeliveries MessageDelivery[]
 
   @@index([eventTypeId])
   @@index([appUserId])
   @@index([deliverAt])
   @@index([status, deliverAt])
+  @@index([status, createdAt])
+}
+
+model MessageDelivery {
+  id        String  @id @default(cuid(2))
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  messageId String
+  webhook   Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  webhookId String
+
+  status      DeliveryStatus @default(PENDING)
+  attempts    Int            @default(0)
+  lastError   String?
+  deliveredAt DateTime?
+  nextRetryAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([messageId, webhookId]) // ensures 1 delivery record per webhook
+  @@index([webhookId])
+  @@index([messageId])
+  @@index([status])
+  @@index([nextRetryAt, status])
 }

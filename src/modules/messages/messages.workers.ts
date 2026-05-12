@@ -1,13 +1,16 @@
 import { Worker } from "bullmq";
 import type { Message } from "generated/prisma/client";
-import { prisma } from "prisma";
+import pLimit from "p-limit";
 import { MESSAGE_QUEUE } from "@/configs/bullmq";
 import { redisClient } from "@/configs/redis";
 import { logger } from "@/lib/logger";
+import { getWebhooksForMessage } from "../webhooks/webhooks.services";
 import { deliverMessage, updateMessageStatus } from "./messages.services";
 import type { MessageJobData } from "./messages.types";
 
 logger.info("Message worker started");
+
+const httpLimit = pLimit(50);
 
 const worker = new Worker<MessageJobData>(
   MESSAGE_QUEUE,
@@ -15,39 +18,37 @@ const worker = new Worker<MessageJobData>(
     // Update message status to processing
     await updateMessageStatus(job.data.message.id, "PROCESSING");
 
-    const appUserId = job.data.message.appUserId;
-    if (!appUserId) {
+    if (!job.data.message.appUserId) {
       throw new Error("AppUser not found");
     }
 
-    // Find webhooks for app user
-    const webhooks = await prisma.webhook.findMany({
-      where: {
-        appUserId,
-        eventTypes: { some: { eventTypeId: job.data.message.eventTypeId } },
-        disabled: false,
-      },
-    });
+    // Fetch webhooks for this message (with caching)
+    const webhooks = await getWebhooksForMessage(
+      job.data.message.appUserId,
+      job.data.message.eventTypeId
+    );
 
     if (webhooks.length === 0) {
-      await updateMessageStatus(job.data.message.id, "SKIPPED");
+      logger.info(
+        `No webhooks found for message ${job.data.message.id}, marking as delivered`
+      );
+      await updateMessageStatus(job.data.message.id, "DELIVERED");
       return;
     }
 
-    const promises = [] as Promise<unknown>[];
+    // Deliver to all webhooks with bounded concurrency
+    const promises = webhooks.map((wh) =>
+      httpLimit(() => deliverMessage(job.data.message, wh))
+    );
 
-    for (const wh of webhooks) {
-      promises.push(deliverMessage(job.data.message, wh));
-    }
-
-    const res = await Promise.allSettled(promises);
+    const results = await Promise.allSettled(promises);
 
     const errors = [] as { error: Error; message: Message }[];
-    const success = [] as unknown[];
+    const successes = [] as unknown[];
 
-    for (const r of res) {
+    for (const r of results) {
       if (r.status === "fulfilled") {
-        success.push(r.value);
+        successes.push(r.value);
       } else {
         errors.push({
           error: r.reason,
@@ -56,33 +57,42 @@ const worker = new Worker<MessageJobData>(
       }
     }
 
-    if (success.length > 0) {
+    // Update message status based on results
+    if (successes.length > 0 && errors.length === 0) {
       await updateMessageStatus(job.data.message.id, "DELIVERED");
-      return success;
-    }
-
-    if (errors.length > 0) {
+    } else if (successes.length > 0 && errors.length > 0) {
+      await updateMessageStatus(job.data.message.id, "PARTIAL");
+    } else if (errors.length === webhooks.length) {
       await updateMessageStatus(job.data.message.id, "FAILED");
 
-      throw new Error("Failed to deliver message", {
+      throw new Error("Failed to deliver message to all webhooks", {
         cause: {
           errors,
           message: job.data.message,
         },
       });
     }
+
+    logger.info(
+      `Message ${job.data.message.id} processed: ${successes.length} succeeded, ${errors.length} failed`
+    );
   },
   {
     connection: redisClient,
-    removeOnFail: { count: 10 },
-    removeOnComplete: { count: 10 },
+    concurrency: 10,
+    removeOnFail: { count: 100 },
+    removeOnComplete: { count: 100 },
   }
 );
 
 worker.on("completed", (job) => {
-  logger.info(`${job.id} has completed!`);
+  logger.info(`Job ${job.id} completed successfully`);
 });
 
 worker.on("failed", (job, err) => {
-  logger.error(`${job?.name} has failed with ${err.message}`);
+  logger.error(`Job ${job?.id} failed: ${err.message}`);
+});
+
+worker.on("error", (err) => {
+  logger.error(`Worker error: ${err.message}`);
 });

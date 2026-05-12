@@ -28,6 +28,7 @@ export const ApplicationCreateSchema = ApplicationSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  deletedAt: true,
   userId: true,
 });
 

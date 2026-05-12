@@ -25,3 +25,14 @@ export async function checkDbConnection() {
     return false;
   }
 }
+
+process.on("SIGINT", async () => {
+  console.log("🛑 Shutting down...");
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  await prisma.$disconnect();
+  process.exit(0);
+});
