@@ -1,5 +1,6 @@
 import { prisma } from "@xwebhook/database";
 import { env } from "@xwebhook/env";
+import { logger } from "@xwebhook/logger";
 import { getConnInfo } from "hono/bun";
 import { HTTPException } from "hono/http-exception";
 import type { AppRouteHandler } from "@/api/lib/types";
@@ -36,6 +37,32 @@ export const register: AppRouteHandler<RegisterRoute> = async (c) => {
     },
   });
 
+  let activeApplicationId: string | null = null;
+
+  try {
+    const defaultApp = await prisma.application.create({
+      data: {
+        name: "Default",
+        description: "Default application",
+        userId: user.id,
+      },
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        activeApplicationId: defaultApp.id,
+      },
+    });
+
+    activeApplicationId = defaultApp.id;
+  } catch (error) {
+    logger.error(
+      "auth",
+      `Failed to create default application for user ${user.id}: ${error}`
+    );
+  }
+
   return c.json(
     {
       status: "success" as const,
@@ -43,7 +70,7 @@ export const register: AppRouteHandler<RegisterRoute> = async (c) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        activeApplicationId: null,
+        activeApplicationId,
         createdAt: user.createdAt,
       },
     },
