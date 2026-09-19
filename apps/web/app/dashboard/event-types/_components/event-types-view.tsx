@@ -112,14 +112,15 @@ export function EventTypesView() {
     );
   }
 
-  // Group event types by group name
+  // Group event types by category (groupName or resource)
   const groupedEvents = eventTypes.reduce(
     (acc: Record<string, typeof eventTypes>, et) => {
-      const group = et.groupName || "Default";
-      if (!acc[group]) {
-        acc[group] = [];
+      const defaultResource = et.name.split(".")[0] || "default";
+      const category = et.groupName?.trim() || defaultResource;
+      if (!acc[category]) {
+        acc[category] = [];
       }
-      acc[group].push(et);
+      acc[category].push(et);
       return acc;
     },
     {}
@@ -132,8 +133,8 @@ export function EventTypesView() {
           <Zap className="mb-4 size-10 stroke-1 text-muted-foreground" />
           <h3 className="font-semibold text-sm">No events defined</h3>
           <p className="mt-1 max-w-sm text-muted-foreground text-xs">
-            Start defining event types like `billing.payment.succeeded` or
-            `iam.user.deleted` for subscribers to listen to.
+            Start defining event types like `user.created` or
+            `payment.succeeded` for subscribers to listen to.
           </p>
         </div>
       );

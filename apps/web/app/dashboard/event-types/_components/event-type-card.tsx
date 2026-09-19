@@ -83,23 +83,17 @@ export function EventTypeCard({
             </div>
             <CardTitle className="mt-2 flex items-center gap-1.5 truncate">
               {(() => {
-                const parts = eventType.name.split(".");
-                if (parts.length === 3) {
+                const [resource, action] = eventType.name.split(".");
+                if (resource && action) {
                   return (
                     <span className="inline-flex items-center gap-0.5 border border-primary/10 bg-primary/5 px-2 py-0.5 font-mono text-xs leading-none">
-                      <span className="font-medium text-muted-foreground/85">
-                        {parts[0]}
-                      </span>
-                      <span className="font-bold text-muted-foreground/45">
-                        .
-                      </span>
                       <span className="font-semibold text-foreground">
-                        {parts[1]}
+                        {resource}
                       </span>
                       <span className="font-bold text-muted-foreground/45">
                         .
                       </span>
-                      <span className="font-bold text-primary">{parts[2]}</span>
+                      <span className="font-bold text-primary">{action}</span>
                     </span>
                   );
                 }
@@ -131,7 +125,7 @@ export function EventTypeCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex items-center justify-between pt-0 font-mono text-[10px] text-muted-foreground">
-        <span>Group: {eventType.groupName || "Default"}</span>
+        <span>Category: {eventType.groupName || "Default"}</span>
         <span>{new Date(eventType.createdAt).toLocaleDateString()}</span>
       </CardContent>
       <CardFooter className="flex justify-end gap-1.5 border-border/50 border-t pt-3 dark:border-input/50">

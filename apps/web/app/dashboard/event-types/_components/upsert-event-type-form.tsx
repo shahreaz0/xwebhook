@@ -21,9 +21,8 @@ const eventTypeSchema = z.object({
   name: z
     .string()
     .min(1, "Event type name is required")
-    .regex(/^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/, {
-      message:
-        "Name must follow the format service.resource.verb (e.g. iam.user.created)",
+    .regex(/^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/, {
+      message: "Name must follow the format resource.verb (e.g. user.created)",
     }),
   description: z.string().optional(),
   groupName: z.string().optional(),
@@ -76,13 +75,15 @@ export function UpsertEventTypeForm() {
   const error = createMutation.error || updateMutation.error;
 
   function onSubmit(values: EventTypeValues) {
+    const resource = values.name.split(".")[0] || "";
+    const groupName = values.groupName?.trim() || resource;
     if (isEdit && selectedEventType) {
       updateMutation.mutate(
         {
           id: selectedEventType.id,
           name: values.name,
           description: values.description || "",
-          groupName: values.groupName || "",
+          groupName,
         },
         {
           onSuccess: () => {
@@ -96,7 +97,7 @@ export function UpsertEventTypeForm() {
         {
           name: values.name,
           description: values.description || "",
-          groupName: values.groupName || "",
+          groupName,
         },
         {
           onSuccess: () => {
@@ -142,10 +143,10 @@ export function UpsertEventTypeForm() {
                 aria-invalid={fieldState.invalid}
                 disabled={isPending}
                 id={field.name}
-                placeholder="e.g. iam.user.created"
+                placeholder="e.g. user.created"
               />
               <FieldDescription>
-                Follow service.resource.verb convention using dot notation.
+                Follow resource.verb convention using dot notation.
               </FieldDescription>
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
@@ -157,7 +158,7 @@ export function UpsertEventTypeForm() {
           name="groupName"
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Category Group</FieldLabel>
+              <FieldLabel htmlFor={field.name}>Category</FieldLabel>
               <Input
                 {...field}
                 aria-invalid={fieldState.invalid}
@@ -165,6 +166,10 @@ export function UpsertEventTypeForm() {
                 id={field.name}
                 placeholder="e.g. Users, Billing"
               />
+              <FieldDescription>
+                Group under a custom category, or leave empty to use the
+                resource.
+              </FieldDescription>
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )}

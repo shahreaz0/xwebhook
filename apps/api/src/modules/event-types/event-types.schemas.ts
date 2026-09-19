@@ -9,10 +9,10 @@ export const EventTypeSchema = z.object({
   id: z.cuid2().openapi({ example: "ckz1234560000abcdef12345" }),
   name: z
     .string()
-    .regex(/^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/, {
-      message: "Name must follow the format service.resource.verb",
+    .regex(/^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)?$/, {
+      message: "Name must follow the format resource.verb",
     })
-    .openapi({ example: "iam.user.created" }),
+    .openapi({ example: "user.created" }),
   description: z
     .string()
     .nullish()
